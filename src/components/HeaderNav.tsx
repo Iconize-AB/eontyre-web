@@ -1,0 +1,94 @@
+'use client'
+
+import {usePathname} from 'next/navigation'
+import {useState, type ReactNode} from 'react'
+
+import type {NavItemData} from '@/sanity/content-types'
+
+import {SmartLink} from './SmartLink'
+
+interface HeaderNavProps {
+  logo: ReactNode
+  navItems: (NavItemData & {_key: string})[]
+  secondaryLink: NavItemData | null
+  primaryCta: NavItemData | null
+}
+
+const navLink =
+  'relative py-[22px] text-[15px] font-medium text-fg after:absolute after:inset-x-0 after:bottom-[14px] after:h-[2px] after:bg-accent after:opacity-0 aria-[current=page]:after:opacity-100'
+
+const ctaLink =
+  'whitespace-nowrap rounded-[2px] bg-accent px-4 py-2.5 text-[15px] font-semibold text-on-accent transition-colors duration-150 ease-in-out hover:bg-accent-hover'
+
+export function HeaderNav({logo, navItems, secondaryLink, primaryCta}: HeaderNavProps) {
+  const pathname = usePathname()
+  const [open, setOpen] = useState(false)
+
+  const isActive = (href: string | null | undefined) =>
+    !!href && href !== '/' && (pathname === href || pathname.startsWith(`${href}/`))
+
+  const links = navItems.map((item) => (
+    <SmartLink
+      key={item._key}
+      link={item.link}
+      className={navLink}
+      aria-current={isActive(item.link?.href) ? 'page' : undefined}
+    >
+      {item.label}
+    </SmartLink>
+  ))
+
+  return (
+    <div className="container-site flex min-h-16 flex-wrap items-center justify-between gap-5">
+      {logo}
+
+      <nav aria-label="Main" className="hidden items-center gap-[clamp(16px,2.4vw,32px)] nav:flex">
+        {links}
+      </nav>
+
+      <div className="hidden items-center gap-5 nav:flex">
+        {secondaryLink && (
+          <SmartLink link={secondaryLink.link} className="text-[15px] font-medium text-fg">
+            {secondaryLink.label}
+          </SmartLink>
+        )}
+        {primaryCta && (
+          <SmartLink link={primaryCta.link} className={ctaLink}>
+            {primaryCta.label}
+          </SmartLink>
+        )}
+      </div>
+
+      <button
+        type="button"
+        className="-mr-2 cursor-pointer p-2 text-[15px] font-medium text-fg nav:hidden"
+        aria-expanded={open}
+        aria-controls="mobile-menu"
+        onClick={() => setOpen((value) => !value)}
+      >
+        {open ? 'Close' : 'Menu'}
+      </button>
+
+      {open && (
+        // Clicking any link in the panel closes it.
+        <div id="mobile-menu" className="flex w-full flex-col pb-6 nav:hidden" onClick={() => setOpen(false)}>
+          <nav aria-label="Main" className="flex flex-col [&>a]:py-3 [&>a]:after:hidden">
+            {links}
+          </nav>
+          <div className="mt-4 flex flex-wrap items-center gap-5 border-t border-line pt-5">
+            {secondaryLink && (
+              <SmartLink link={secondaryLink.link} className="text-[15px] font-medium text-fg">
+                {secondaryLink.label}
+              </SmartLink>
+            )}
+            {primaryCta && (
+              <SmartLink link={primaryCta.link} className={ctaLink}>
+                {primaryCta.label}
+              </SmartLink>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
