@@ -1,14 +1,19 @@
 'use client'
 
+import {documentInternationalization} from '@sanity/document-internationalization'
 import {visionTool} from '@sanity/vision'
 import {defineConfig} from 'sanity'
 import {presentationTool} from 'sanity/presentation'
 import {structureTool} from 'sanity/structure'
 
+import {locales} from './src/i18n/config'
 import {apiVersion, dataset, projectId, studioUrl} from './src/sanity/env'
 import {resolve} from './src/sanity/presentation'
 import {schemaTypes} from './src/sanity/schemaTypes'
 import {SINGLETON_TYPES, structure} from './src/sanity/structure'
+
+/** Document types that exist once per language. */
+const translatedTypes = ['page', 'integration', 'post', 'siteSettings']
 
 export default defineConfig({
   name: 'default',
@@ -29,6 +34,11 @@ export default defineConfig({
   },
   plugins: [
     structureTool({structure}),
+    documentInternationalization({
+      supportedLanguages: locales.map(({id, title}) => ({id, title})),
+      schemaTypes: translatedTypes,
+      apiVersion: '2025-02-19',
+    }),
     presentationTool({
       resolve,
       previewUrl: {

@@ -467,18 +467,50 @@ export type Link = {
   openInNewTab?: boolean;
 };
 
-export type Post = {
+export type TranslationMetadata = {
   _id: string;
-  _type: "post";
+  _type: "translation.metadata";
   _createdAt: string;
   _updatedAt: string;
   _rev: string;
-  title: string;
-  slug: Slug;
-  publishedAt: string;
-  category: "productNews" | "integrations" | "company";
-  excerpt: string;
-  mainImage?: {
+  translations?: InternationalizedArrayReference;
+  schemaTypes?: Array<string>;
+};
+
+export type InternationalizedArrayReference = Array<
+  {
+    _key: string;
+  } & InternationalizedArrayReferenceValue
+>;
+
+export type SiteSettingsReference = {
+  _ref: string;
+  _type: "reference";
+  _weak?: boolean;
+  [internalGroqTypeReferenceTo]?: "siteSettings";
+};
+
+export type InternationalizedArrayReferenceValue = {
+  _type: "internationalizedArrayReferenceValue";
+  value?:
+    | PageReference
+    | IntegrationReference
+    | PostReference
+    | SiteSettingsReference;
+  language: string;
+};
+
+export type SiteSettings = {
+  _id: string;
+  _type: "siteSettings";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  language?: string;
+  siteTitle: string;
+  homePage: PageReference;
+  seo?: Seo;
+  logo: {
     asset?: SanityImageAssetReference;
     media?: unknown;
     hotspot?: SanityImageHotspot;
@@ -486,9 +518,41 @@ export type Post = {
     alt: string;
     _type: "image";
   };
-  featured?: boolean;
-  body?: PostBody;
-  seo?: Seo;
+  logoOnLight?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    alt: string;
+    _type: "image";
+  };
+  navItems?: Array<
+    {
+      _key: string;
+    } & NavItem
+  >;
+  secondaryLink?: NavItem;
+  primaryCta?: NavItem;
+  tagline?: string;
+  footerColumns?: Array<{
+    title: string;
+    links?: Array<
+      {
+        _key: string;
+      } & NavItem
+    >;
+    _type: "footerColumn";
+    _key: string;
+  }>;
+  contact?: {
+    title?: string;
+    lines?: Array<string>;
+    link?: NavItem;
+  };
+  legal?: {
+    copyright?: string;
+    link?: NavItem;
+  };
 };
 
 export type SanityImageCrop = {
@@ -507,6 +571,31 @@ export type SanityImageHotspot = {
   width: number;
 };
 
+export type Post = {
+  _id: string;
+  _type: "post";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  language?: string;
+  title: string;
+  slug: Slug;
+  publishedAt: string;
+  category: "productNews" | "integrations" | "company";
+  excerpt: string;
+  mainImage?: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    alt: string;
+    _type: "image";
+  };
+  featured?: boolean;
+  body?: PostBody;
+  seo?: Seo;
+};
+
 export type Slug = {
   _type: "slug";
   current: string;
@@ -519,6 +608,7 @@ export type Integration = {
   _createdAt: string;
   _updatedAt: string;
   _rev: string;
+  language?: string;
   name: string;
   slug: Slug;
   shortName: string;
@@ -596,66 +686,13 @@ export type Integration = {
   orderRank?: string;
 };
 
-export type SiteSettings = {
-  _id: string;
-  _type: "siteSettings";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  siteTitle: string;
-  homePage: PageReference;
-  seo?: Seo;
-  logo: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    alt: string;
-    _type: "image";
-  };
-  logoOnLight?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    alt: string;
-    _type: "image";
-  };
-  navItems?: Array<
-    {
-      _key: string;
-    } & NavItem
-  >;
-  secondaryLink?: NavItem;
-  primaryCta?: NavItem;
-  tagline?: string;
-  footerColumns?: Array<{
-    title: string;
-    links?: Array<
-      {
-        _key: string;
-      } & NavItem
-    >;
-    _type: "footerColumn";
-    _key: string;
-  }>;
-  contact?: {
-    title?: string;
-    lines?: Array<string>;
-    link?: NavItem;
-  };
-  legal?: {
-    copyright?: string;
-    link?: NavItem;
-  };
-};
-
 export type Page = {
   _id: string;
   _type: "page";
   _createdAt: string;
   _updatedAt: string;
   _rev: string;
+  language?: string;
   title: string;
   slug: Slug;
   blocks?: Array<
@@ -840,12 +877,16 @@ export type AllSanitySchemaTypes =
   | PageReference
   | PostReference
   | Link
-  | Post
+  | TranslationMetadata
+  | InternationalizedArrayReference
+  | SiteSettingsReference
+  | InternationalizedArrayReferenceValue
+  | SiteSettings
   | SanityImageCrop
   | SanityImageHotspot
+  | Post
   | Slug
   | Integration
-  | SiteSettings
   | Page
   | SanityImagePaletteSwatch
   | SanityImagePalette
@@ -856,188 +897,125 @@ export type AllSanitySchemaTypes =
   | SanityImageAsset
   | Geopoint;
 
+// Source: src/i18n/translations.ts
+// Variable: TRANSLATIONS_QUERY
+// Query: *[_type == "translation.metadata"]{    "items": translations[]{      language,      "type": value->_type,      "slug": value->slug.current,      "isHome": value->_id in *[_type == "siteSettings"].homePage._ref    }  }
+export type TRANSLATIONS_QUERY_RESULT = Array<{
+  items: Array<{
+    language: string;
+    type: "integration" | "page" | "post" | "siteSettings" | null;
+    slug: string | null;
+    isHome: boolean | false;
+  }> | null;
+}>;
+
 // Source: src/sanity/queries.ts
 // Variable: SETTINGS_QUERY
-// Query: *[_id == "siteSettings"][0]{    siteTitle,    seo{title, description, image},    logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    logoOnLight{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    navItems[]{_key,   label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    secondaryLink{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    primaryCta{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    tagline,    footerColumns[]{_key, title, links[]{_key,   label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}},    contact{title, lines, link{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}},    legal{copyright, link{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}}  }
-export type SETTINGS_QUERY_RESULT =
-  | {
-      siteTitle: null;
-      seo: null;
-      logo: null;
-      logoOnLight: null;
-      navItems: null;
-      secondaryLink: null;
-      primaryCta: null;
-      tagline: null;
-      footerColumns: null;
-      contact: null;
-      legal: null;
-    }
-  | {
-      siteTitle: null;
-      seo: {
-        title: string | null;
-        description: string | null;
-        image: {
-          asset?: SanityImageAssetReference;
-          media?: unknown;
-          hotspot?: SanityImageHotspot;
-          crop?: SanityImageCrop;
-          _type: "image";
+// Query: *[_type == "siteSettings" && language == $language][0]{    siteTitle,    seo{title, description, image},    logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    logoOnLight{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    navItems[]{_key,   label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    secondaryLink{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    primaryCta{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    tagline,    footerColumns[]{_key, title, links[]{_key,   label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}},    contact{title, lines, link{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}},    legal{copyright, link{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}}  }
+export type SETTINGS_QUERY_RESULT = {
+  siteTitle: string;
+  seo: {
+    title: string | null;
+    description: string | null;
+    image: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    } | null;
+  } | null;
+  logo: {
+    alt: string;
+    hotspot: SanityImageHotspot | null;
+    crop: SanityImageCrop | null;
+    asset: {
+      _id: string;
+      metadata: {
+        lqip: string | null;
+        dimensions: {
+          width: number;
+          height: number;
         } | null;
       } | null;
-      logo: null;
-      logoOnLight: null;
-      navItems: null;
-      secondaryLink: null;
-      primaryCta: null;
-      tagline: null;
-      footerColumns: null;
-      contact: null;
-      legal: null;
-    }
-  | {
-      siteTitle: null;
-      seo: {
-        title: string | null;
-        description: string | null;
-        image: {
-          asset?: SanityImageAssetReference;
-          media?: unknown;
-          hotspot?: SanityImageHotspot;
-          crop?: SanityImageCrop;
-          _type: "image";
+    } | null;
+  };
+  logoOnLight: {
+    alt: string;
+    hotspot: SanityImageHotspot | null;
+    crop: SanityImageCrop | null;
+    asset: {
+      _id: string;
+      metadata: {
+        lqip: string | null;
+        dimensions: {
+          width: number;
+          height: number;
         } | null;
       } | null;
-      logo: {
-        alt: string;
-        hotspot: SanityImageHotspot | null;
-        crop: SanityImageCrop | null;
-        asset: {
-          _id: string;
-          metadata: {
-            lqip: string | null;
-            dimensions: {
-              width: number;
-              height: number;
-            } | null;
-          } | null;
-        } | null;
-      } | null;
-      logoOnLight: null;
-      navItems: null;
-      secondaryLink: null;
-      primaryCta: null;
-      tagline: null;
-      footerColumns: null;
-      contact: null;
-      legal: null;
-    }
-  | {
-      siteTitle: string;
-      seo: {
-        title: string | null;
-        description: string | null;
-        image: {
-          asset?: SanityImageAssetReference;
-          media?: unknown;
-          hotspot?: SanityImageHotspot;
-          crop?: SanityImageCrop;
-          _type: "image";
-        } | null;
-      } | null;
-      logo: {
-        alt: string;
-        hotspot: SanityImageHotspot | null;
-        crop: SanityImageCrop | null;
-        asset: {
-          _id: string;
-          metadata: {
-            lqip: string | null;
-            dimensions: {
-              width: number;
-              height: number;
-            } | null;
-          } | null;
-        } | null;
+    } | null;
+  } | null;
+  navItems: Array<{
+    _key: string;
+    label: string;
+    link: {
+      openInNewTab: boolean | null;
+      href: string | null;
+    };
+  }> | null;
+  secondaryLink: {
+    label: string;
+    link: {
+      openInNewTab: boolean | null;
+      href: string | null;
+    };
+  } | null;
+  primaryCta: {
+    label: string;
+    link: {
+      openInNewTab: boolean | null;
+      href: string | null;
+    };
+  } | null;
+  tagline: string | null;
+  footerColumns: Array<{
+    _key: string;
+    title: string;
+    links: Array<{
+      _key: string;
+      label: string;
+      link: {
+        openInNewTab: boolean | null;
+        href: string | null;
       };
-      logoOnLight: {
-        alt: string;
-        hotspot: SanityImageHotspot | null;
-        crop: SanityImageCrop | null;
-        asset: {
-          _id: string;
-          metadata: {
-            lqip: string | null;
-            dimensions: {
-              width: number;
-              height: number;
-            } | null;
-          } | null;
-        } | null;
-      } | null;
-      navItems: Array<{
-        _key: string;
-        label: string;
-        link: {
-          openInNewTab: boolean | null;
-          href: string | null | "/";
-        };
-      }> | null;
-      secondaryLink: {
-        label: string;
-        link: {
-          openInNewTab: boolean | null;
-          href: string | null | "/";
-        };
-      } | null;
-      primaryCta: {
-        label: string;
-        link: {
-          openInNewTab: boolean | null;
-          href: string | null | "/";
-        };
-      } | null;
-      tagline: string | null;
-      footerColumns: Array<{
-        _key: string;
-        title: string;
-        links: Array<{
-          _key: string;
-          label: string;
-          link: {
-            openInNewTab: boolean | null;
-            href: string | null | "/";
-          };
-        }> | null;
-      }> | null;
-      contact: {
-        title: string | null;
-        lines: Array<string> | null;
-        link: {
-          label: string;
-          link: {
-            openInNewTab: boolean | null;
-            href: string | null | "/";
-          };
-        } | null;
-      } | null;
-      legal: {
-        copyright: string | null;
-        link: {
-          label: string;
-          link: {
-            openInNewTab: boolean | null;
-            href: string | null | "/";
-          };
-        } | null;
-      } | null;
-    }
-  | null;
+    }> | null;
+  }> | null;
+  contact: {
+    title: string | null;
+    lines: Array<string> | null;
+    link: {
+      label: string;
+      link: {
+        openInNewTab: boolean | null;
+        href: string | null;
+      };
+    } | null;
+  } | null;
+  legal: {
+    copyright: string | null;
+    link: {
+      label: string;
+      link: {
+        openInNewTab: boolean | null;
+        href: string | null;
+      };
+    } | null;
+  } | null;
+} | null;
 
 // Source: src/sanity/queries.ts
 // Variable: PAGE_QUERY
-// Query: *[_type == "page" && select(    $slug == "" => _id == *[_id == "siteSettings"][0].homePage._ref,    slug.current == $slug  )][0]{    _id,    _type,    title,    "slug": slug.current,    "isHome": _id == *[_id == "siteSettings"][0].homePage._ref,    seo{title, description, image, noIndex},      blocks[]{    _key,    _type,      _type == "heroBlock" => {    eyebrow,    heading,    body,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    action,    buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    plateSearch{placeholder, buttonLabel, targetUrl},    height,    theme,    anchorId  },      _type == "pageHeroBlock" => {    eyebrow,    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    contactLines[]{_key, label, href},    media,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    codeMethod,    codePath,    code,    theme,    anchorId  },      _type == "anchorNavBlock" => {    items[]{_key, label, anchorId},      theme,  background,  anchorId,  paddingTop  },      _type == "productScreenBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    note,    screen,    layout,      theme,  background,  anchorId,  paddingTop  },      _type == "textMediaBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    list,    listStyle,    link{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    imagePosition,      theme,  background,  anchorId,  paddingTop  },      _type == "featureGridBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    headerLink{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]{      _key,      title,      body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},      image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},      link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}    },    variant,      theme,  background,  anchorId,  paddingTop  },      _type == "featureRowsBlock" => {    heading,    rows[]{_key, title, body, image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}, link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}, linkLabel},    style,    imagePosition,      theme,  background,  anchorId,  paddingTop  },      _type == "linkListBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    button{  label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]{_key, label, meta, link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},      theme,  background,  anchorId,  paddingTop  },      _type == "richTextBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    layout,      theme,  background,  anchorId,  paddingTop  },      _type == "imageBlock" => {    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    aspect,      theme,  background,  anchorId,  paddingTop  },      _type == "statsBlock" => {    items[]{_key, value, label},    theme,    background,    anchorId  },      _type == "logoGridBlock" => {    heading,    body,    button{  label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]->{_id, name, logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}},      theme,  background,  anchorId,  paddingTop  },      _type == "integrationDirectoryBlock" => {    heading,    showFilter,    filterCategories,    labels,    "integrations": select(      count(items) > 0 => items[]->{  _id,  name,  shortName,  category,  shortDescription,  status,  logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},  "href": select(    defined(linkOverride.linkType) => linkOverride{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}.href,    hasDetailPage == true => "/integrations/" + slug.current,    null  )},      *[_type == "integration" && defined(slug.current)] | order(orderRank) {  _id,  name,  shortName,  category,  shortDescription,  status,  logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},  "href": select(    defined(linkOverride.linkType) => linkOverride{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}.href,    hasDetailPage == true => "/integrations/" + slug.current,    null  )}    ),      theme,  background,  anchorId,  paddingTop  },      _type == "newsListBlock" => {    heading,    showFeatured,    showFilter,    pageSize,    labels,    "posts": *[_type == "post" && defined(slug.current)] | order(publishedAt desc) {  _id,  title,  "slug": slug.current,  publishedAt,  category,  excerpt,  featured,  mainImage{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}},      theme,  background,  anchorId,  paddingTop  },      _type == "formBlock" => {    formType,    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    submitLabel,    finePrint[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    successHeading,    successBody,    errorText,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    layout,    headingLevel,      theme,  background,  anchorId,  paddingTop  },      _type == "ctaBannerBlock" => {    heading,    body,    "buttons": select(      count(buttons) > 0 => buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},      defined(button) => [button{"_key": "legacy",   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}],      []    ),    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    style,    overlayOpacity,    theme,    anchorId  }  }  }
+// Query: *[_type == "page" && language == $language && select(    $slug == "" => _id == *[_type == "siteSettings" && language == $language][0].homePage._ref,    slug.current == $slug  )][0]{    _id,    _type,    title,    "slug": slug.current,    "isHome": _id == *[_type == "siteSettings" && language == $language][0].homePage._ref,    seo{title, description, image, noIndex},      blocks[]{    _key,    _type,      _type == "heroBlock" => {    eyebrow,    heading,    body,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    action,    buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    plateSearch{placeholder, buttonLabel, targetUrl},    height,    theme,    anchorId  },      _type == "pageHeroBlock" => {    eyebrow,    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    contactLines[]{_key, label, href},    media,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    codeMethod,    codePath,    code,    theme,    anchorId  },      _type == "anchorNavBlock" => {    items[]{_key, label, anchorId},      theme,  background,  anchorId,  paddingTop  },      _type == "productScreenBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    note,    screen,    layout,      theme,  background,  anchorId,  paddingTop  },      _type == "textMediaBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    list,    listStyle,    link{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    imagePosition,      theme,  background,  anchorId,  paddingTop  },      _type == "featureGridBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    headerLink{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]{      _key,      title,      body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},      image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},      link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}    },    variant,      theme,  background,  anchorId,  paddingTop  },      _type == "featureRowsBlock" => {    heading,    rows[]{_key, title, body, image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}, link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}, linkLabel},    style,    imagePosition,      theme,  background,  anchorId,  paddingTop  },      _type == "linkListBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    button{  label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]{_key, label, meta, link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},      theme,  background,  anchorId,  paddingTop  },      _type == "richTextBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    layout,      theme,  background,  anchorId,  paddingTop  },      _type == "imageBlock" => {    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    aspect,      theme,  background,  anchorId,  paddingTop  },      _type == "statsBlock" => {    items[]{_key, value, label},    theme,    background,    anchorId  },      _type == "logoGridBlock" => {    heading,    body,    button{  label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]->{_id, name, logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}},      theme,  background,  anchorId,  paddingTop  },      _type == "integrationDirectoryBlock" => {    heading,    showFilter,    filterCategories,    labels,    "integrations": select(      count(items) > 0 => items[]->{  _id,  name,  shortName,  category,  shortDescription,  status,  logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},  "href": select(    defined(linkOverride.linkType) => linkOverride{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}.href,    hasDetailPage == true => string($prefix) + "/integrations/" + slug.current,    null  )},      *[_type == "integration" && language == $language && defined(slug.current)] | order(orderRank) {  _id,  name,  shortName,  category,  shortDescription,  status,  logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},  "href": select(    defined(linkOverride.linkType) => linkOverride{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}.href,    hasDetailPage == true => string($prefix) + "/integrations/" + slug.current,    null  )}    ),      theme,  background,  anchorId,  paddingTop  },      _type == "newsListBlock" => {    heading,    showFeatured,    showFilter,    pageSize,    labels,    "posts": *[_type == "post" && language == $language && defined(slug.current)] | order(publishedAt desc) {  _id,  title,  "slug": slug.current,  publishedAt,  category,  excerpt,  featured,  mainImage{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}},      theme,  background,  anchorId,  paddingTop  },      _type == "formBlock" => {    formType,    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    submitLabel,    finePrint[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    successHeading,    successBody,    errorText,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    layout,    headingLevel,      theme,  background,  anchorId,  paddingTop  },      _type == "ctaBannerBlock" => {    heading,    body,    "buttons": select(      count(buttons) > 0 => buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},      defined(button) => [button{"_key": "legacy",   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}],      []    ),    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    style,    overlayOpacity,    theme,    anchorId  }  }  }
 export type PAGE_QUERY_RESULT = {
   _id: string;
   _type: "page";
@@ -1082,7 +1060,7 @@ export type PAGE_QUERY_RESULT = {
               variant: "outline" | "primary" | null;
               link: {
                 openInNewTab: boolean | null;
-                href: string | null | "/";
+                href: string | null;
               };
             }>
           | Array<never>
@@ -1092,7 +1070,7 @@ export type PAGE_QUERY_RESULT = {
               variant: "outline" | "primary" | null;
               link: {
                 openInNewTab: boolean | null;
-                href: string | null | "/";
+                href: string | null;
               };
             } | null>
           | null;
@@ -1137,7 +1115,7 @@ export type PAGE_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -1147,7 +1125,7 @@ export type PAGE_QUERY_RESULT = {
           label: string;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         } | null;
         items: Array<{
@@ -1170,7 +1148,7 @@ export type PAGE_QUERY_RESULT = {
               anchor?: string;
               url?: string;
               openInNewTab: boolean | null;
-              href: string | null | "/";
+              href: string | null;
             }> | null;
             level?: number;
             _type: "block";
@@ -1193,7 +1171,7 @@ export type PAGE_QUERY_RESULT = {
           } | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           } | null;
         }> | null;
         variant: "cards" | "numbered" | "steps" | "topRule" | null;
@@ -1227,7 +1205,7 @@ export type PAGE_QUERY_RESULT = {
           };
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           } | null;
           linkLabel: string | null;
         }> | null;
@@ -1260,7 +1238,7 @@ export type PAGE_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -1284,7 +1262,7 @@ export type PAGE_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -1343,7 +1321,7 @@ export type PAGE_QUERY_RESULT = {
           variant: "outline" | "primary" | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         }> | null;
         plateSearch: {
@@ -1415,7 +1393,7 @@ export type PAGE_QUERY_RESULT = {
               } | null;
             } | null;
           } | null;
-          href: string | null | "/";
+          href: string | null;
         }> | null;
         theme: "dark" | "light" | null;
         background: "default" | "surface" | null;
@@ -1443,7 +1421,7 @@ export type PAGE_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -1454,7 +1432,7 @@ export type PAGE_QUERY_RESULT = {
           variant: "outline" | "primary" | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         } | null;
         items: Array<{
@@ -1463,7 +1441,7 @@ export type PAGE_QUERY_RESULT = {
           meta: string | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           } | null;
         }> | null;
         theme: "dark" | "light" | null;
@@ -1481,7 +1459,7 @@ export type PAGE_QUERY_RESULT = {
           variant: "outline" | "primary" | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         } | null;
         items: Array<{
@@ -1567,7 +1545,7 @@ export type PAGE_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -1579,7 +1557,7 @@ export type PAGE_QUERY_RESULT = {
           variant: "outline" | "primary" | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         }> | null;
         contactLines: Array<{
@@ -1630,7 +1608,7 @@ export type PAGE_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -1665,7 +1643,7 @@ export type PAGE_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -1710,7 +1688,7 @@ export type PAGE_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -1722,7 +1700,7 @@ export type PAGE_QUERY_RESULT = {
           label: string;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         } | null;
         image: {
@@ -1751,14 +1729,14 @@ export type PAGE_QUERY_RESULT = {
 
 // Source: src/sanity/queries.ts
 // Variable: PAGE_SLUGS_QUERY
-// Query: *[_type == "page" && defined(slug.current)]{"slug": slug.current}
+// Query: *[_type == "page" && language == $language && defined(slug.current)]{"slug": slug.current}
 export type PAGE_SLUGS_QUERY_RESULT = Array<{
   slug: string;
 }>;
 
 // Source: src/sanity/queries.ts
 // Variable: INTEGRATION_QUERY
-// Query: *[_type == "integration" && slug.current == $slug && hasDetailPage == true][0]{    _id,    _type,    name,    "slug": slug.current,    shortDescription,    seo{title, description, image, noIndex},      blocks[]{    _key,    _type,      _type == "heroBlock" => {    eyebrow,    heading,    body,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    action,    buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    plateSearch{placeholder, buttonLabel, targetUrl},    height,    theme,    anchorId  },      _type == "pageHeroBlock" => {    eyebrow,    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    contactLines[]{_key, label, href},    media,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    codeMethod,    codePath,    code,    theme,    anchorId  },      _type == "anchorNavBlock" => {    items[]{_key, label, anchorId},      theme,  background,  anchorId,  paddingTop  },      _type == "productScreenBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    note,    screen,    layout,      theme,  background,  anchorId,  paddingTop  },      _type == "textMediaBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    list,    listStyle,    link{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    imagePosition,      theme,  background,  anchorId,  paddingTop  },      _type == "featureGridBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    headerLink{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]{      _key,      title,      body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},      image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},      link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}    },    variant,      theme,  background,  anchorId,  paddingTop  },      _type == "featureRowsBlock" => {    heading,    rows[]{_key, title, body, image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}, link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}, linkLabel},    style,    imagePosition,      theme,  background,  anchorId,  paddingTop  },      _type == "linkListBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    button{  label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]{_key, label, meta, link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},      theme,  background,  anchorId,  paddingTop  },      _type == "richTextBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    layout,      theme,  background,  anchorId,  paddingTop  },      _type == "imageBlock" => {    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    aspect,      theme,  background,  anchorId,  paddingTop  },      _type == "statsBlock" => {    items[]{_key, value, label},    theme,    background,    anchorId  },      _type == "logoGridBlock" => {    heading,    body,    button{  label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]->{_id, name, logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}},      theme,  background,  anchorId,  paddingTop  },      _type == "integrationDirectoryBlock" => {    heading,    showFilter,    filterCategories,    labels,    "integrations": select(      count(items) > 0 => items[]->{  _id,  name,  shortName,  category,  shortDescription,  status,  logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},  "href": select(    defined(linkOverride.linkType) => linkOverride{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}.href,    hasDetailPage == true => "/integrations/" + slug.current,    null  )},      *[_type == "integration" && defined(slug.current)] | order(orderRank) {  _id,  name,  shortName,  category,  shortDescription,  status,  logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},  "href": select(    defined(linkOverride.linkType) => linkOverride{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}.href,    hasDetailPage == true => "/integrations/" + slug.current,    null  )}    ),      theme,  background,  anchorId,  paddingTop  },      _type == "newsListBlock" => {    heading,    showFeatured,    showFilter,    pageSize,    labels,    "posts": *[_type == "post" && defined(slug.current)] | order(publishedAt desc) {  _id,  title,  "slug": slug.current,  publishedAt,  category,  excerpt,  featured,  mainImage{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}},      theme,  background,  anchorId,  paddingTop  },      _type == "formBlock" => {    formType,    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    submitLabel,    finePrint[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    successHeading,    successBody,    errorText,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    layout,    headingLevel,      theme,  background,  anchorId,  paddingTop  },      _type == "ctaBannerBlock" => {    heading,    body,    "buttons": select(      count(buttons) > 0 => buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},      defined(button) => [button{"_key": "legacy",   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}],      []    ),    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    style,    overlayOpacity,    theme,    anchorId  }  }  }
+// Query: *[_type == "integration" && language == $language && slug.current == $slug && hasDetailPage == true][0]{    _id,    _type,    name,    "slug": slug.current,    shortDescription,    seo{title, description, image, noIndex},      blocks[]{    _key,    _type,      _type == "heroBlock" => {    eyebrow,    heading,    body,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    action,    buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    plateSearch{placeholder, buttonLabel, targetUrl},    height,    theme,    anchorId  },      _type == "pageHeroBlock" => {    eyebrow,    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    contactLines[]{_key, label, href},    media,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    codeMethod,    codePath,    code,    theme,    anchorId  },      _type == "anchorNavBlock" => {    items[]{_key, label, anchorId},      theme,  background,  anchorId,  paddingTop  },      _type == "productScreenBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    note,    screen,    layout,      theme,  background,  anchorId,  paddingTop  },      _type == "textMediaBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    list,    listStyle,    link{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    imagePosition,      theme,  background,  anchorId,  paddingTop  },      _type == "featureGridBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    headerLink{  label,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]{      _key,      title,      body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},      image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},      link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}    },    variant,      theme,  background,  anchorId,  paddingTop  },      _type == "featureRowsBlock" => {    heading,    rows[]{_key, title, body, image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}, link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}, linkLabel},    style,    imagePosition,      theme,  background,  anchorId,  paddingTop  },      _type == "linkListBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    button{  label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]{_key, label, meta, link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},      theme,  background,  anchorId,  paddingTop  },      _type == "richTextBlock" => {    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    layout,      theme,  background,  anchorId,  paddingTop  },      _type == "imageBlock" => {    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    aspect,      theme,  background,  anchorId,  paddingTop  },      _type == "statsBlock" => {    items[]{_key, value, label},    theme,    background,    anchorId  },      _type == "logoGridBlock" => {    heading,    body,    button{  label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},    items[]->{_id, name, logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}},      theme,  background,  anchorId,  paddingTop  },      _type == "integrationDirectoryBlock" => {    heading,    showFilter,    filterCategories,    labels,    "integrations": select(      count(items) > 0 => items[]->{  _id,  name,  shortName,  category,  shortDescription,  status,  logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},  "href": select(    defined(linkOverride.linkType) => linkOverride{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}.href,    hasDetailPage == true => string($prefix) + "/integrations/" + slug.current,    null  )},      *[_type == "integration" && language == $language && defined(slug.current)] | order(orderRank) {  _id,  name,  shortName,  category,  shortDescription,  status,  logo{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},  "href": select(    defined(linkOverride.linkType) => linkOverride{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}.href,    hasDetailPage == true => string($prefix) + "/integrations/" + slug.current,    null  )}    ),      theme,  background,  anchorId,  paddingTop  },      _type == "newsListBlock" => {    heading,    showFeatured,    showFilter,    pageSize,    labels,    "posts": *[_type == "post" && language == $language && defined(slug.current)] | order(publishedAt desc) {  _id,  title,  "slug": slug.current,  publishedAt,  category,  excerpt,  featured,  mainImage{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}},      theme,  background,  anchorId,  paddingTop  },      _type == "formBlock" => {    formType,    heading,    body[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    submitLabel,    finePrint[]{  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},    successHeading,    successBody,    errorText,    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    layout,    headingLevel,      theme,  background,  anchorId,  paddingTop  },      _type == "ctaBannerBlock" => {    heading,    body,    "buttons": select(      count(buttons) > 0 => buttons[]{_key,   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}},      defined(button) => [button{"_key": "legacy",   label,  variant,  link{  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}}],      []    ),    image{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    style,    overlayOpacity,    theme,    anchorId  }  }  }
 export type INTEGRATION_QUERY_RESULT = {
   _id: string;
   _type: "integration";
@@ -1803,7 +1781,7 @@ export type INTEGRATION_QUERY_RESULT = {
               variant: "outline" | "primary" | null;
               link: {
                 openInNewTab: boolean | null;
-                href: string | null | "/";
+                href: string | null;
               };
             }>
           | Array<never>
@@ -1813,7 +1791,7 @@ export type INTEGRATION_QUERY_RESULT = {
               variant: "outline" | "primary" | null;
               link: {
                 openInNewTab: boolean | null;
-                href: string | null | "/";
+                href: string | null;
               };
             } | null>
           | null;
@@ -1858,7 +1836,7 @@ export type INTEGRATION_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -1868,7 +1846,7 @@ export type INTEGRATION_QUERY_RESULT = {
           label: string;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         } | null;
         items: Array<{
@@ -1891,7 +1869,7 @@ export type INTEGRATION_QUERY_RESULT = {
               anchor?: string;
               url?: string;
               openInNewTab: boolean | null;
-              href: string | null | "/";
+              href: string | null;
             }> | null;
             level?: number;
             _type: "block";
@@ -1914,7 +1892,7 @@ export type INTEGRATION_QUERY_RESULT = {
           } | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           } | null;
         }> | null;
         variant: "cards" | "numbered" | "steps" | "topRule" | null;
@@ -1948,7 +1926,7 @@ export type INTEGRATION_QUERY_RESULT = {
           };
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           } | null;
           linkLabel: string | null;
         }> | null;
@@ -1981,7 +1959,7 @@ export type INTEGRATION_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -2005,7 +1983,7 @@ export type INTEGRATION_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -2064,7 +2042,7 @@ export type INTEGRATION_QUERY_RESULT = {
           variant: "outline" | "primary" | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         }> | null;
         plateSearch: {
@@ -2136,7 +2114,7 @@ export type INTEGRATION_QUERY_RESULT = {
               } | null;
             } | null;
           } | null;
-          href: string | null | "/";
+          href: string | null;
         }> | null;
         theme: "dark" | "light" | null;
         background: "default" | "surface" | null;
@@ -2164,7 +2142,7 @@ export type INTEGRATION_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -2175,7 +2153,7 @@ export type INTEGRATION_QUERY_RESULT = {
           variant: "outline" | "primary" | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         } | null;
         items: Array<{
@@ -2184,7 +2162,7 @@ export type INTEGRATION_QUERY_RESULT = {
           meta: string | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           } | null;
         }> | null;
         theme: "dark" | "light" | null;
@@ -2202,7 +2180,7 @@ export type INTEGRATION_QUERY_RESULT = {
           variant: "outline" | "primary" | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         } | null;
         items: Array<{
@@ -2288,7 +2266,7 @@ export type INTEGRATION_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -2300,7 +2278,7 @@ export type INTEGRATION_QUERY_RESULT = {
           variant: "outline" | "primary" | null;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         }> | null;
         contactLines: Array<{
@@ -2351,7 +2329,7 @@ export type INTEGRATION_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -2386,7 +2364,7 @@ export type INTEGRATION_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -2431,7 +2409,7 @@ export type INTEGRATION_QUERY_RESULT = {
             anchor?: string;
             url?: string;
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           }> | null;
           level?: number;
           _type: "block";
@@ -2443,7 +2421,7 @@ export type INTEGRATION_QUERY_RESULT = {
           label: string;
           link: {
             openInNewTab: boolean | null;
-            href: string | null | "/";
+            href: string | null;
           };
         } | null;
         image: {
@@ -2472,14 +2450,14 @@ export type INTEGRATION_QUERY_RESULT = {
 
 // Source: src/sanity/queries.ts
 // Variable: INTEGRATION_SLUGS_QUERY
-// Query: *[_type == "integration" && hasDetailPage == true && defined(slug.current)]{"slug": slug.current}
+// Query: *[_type == "integration" && language == $language && hasDetailPage == true && defined(slug.current)]{"slug": slug.current}
 export type INTEGRATION_SLUGS_QUERY_RESULT = Array<{
   slug: string;
 }>;
 
 // Source: src/sanity/queries.ts
 // Variable: POST_QUERY
-// Query: *[_type == "post" && slug.current == $slug][0]{      _id,  title,  "slug": slug.current,  publishedAt,  category,  excerpt,  featured,  mainImage{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    _type,    body[]{      _type == "block" => {  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",      page->_type == "integration" => "/integrations/" + page->slug.current,      page->_type == "post" => "/news/" + page->slug.current,      "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},      _type == "image" => {_key, _type, caption,   alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}    },    seo{title, description, image, noIndex},    "related": *[_type == "post" && defined(slug.current) && slug.current != $slug]      | order(publishedAt desc)[0...3]{  _id,  title,  "slug": slug.current,  publishedAt,  category,  excerpt,  featured,  mainImage{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}}  }
+// Query: *[_type == "post" && language == $language && slug.current == $slug][0]{      _id,  title,  "slug": slug.current,  publishedAt,  category,  excerpt,  featured,  mainImage{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}},    _type,    body[]{      _type == "block" => {  ...,  markDefs[]{    ...,    _type == "link" => {  openInNewTab,  "href": select(    linkType == "internal" => select(      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,      string($prefix) + "/" + page->slug.current    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),    url  )}  }},      _type == "image" => {_key, _type, caption,   alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}    },    seo{title, description, image, noIndex},    "related": *[_type == "post" && language == $language && defined(slug.current) && slug.current != $slug]      | order(publishedAt desc)[0...3]{  _id,  title,  "slug": slug.current,  publishedAt,  category,  excerpt,  featured,  mainImage{  alt,  hotspot,  crop,  asset->{_id, metadata{lqip, dimensions{width, height}}}}}  }
 export type POST_QUERY_RESULT = {
   _id: string;
   title: string;
@@ -2522,7 +2500,7 @@ export type POST_QUERY_RESULT = {
           anchor?: string;
           url?: string;
           openInNewTab: boolean | null;
-          href: string | null | "/";
+          href: string | null;
         }> | null;
         level?: number;
         _type: "block";
@@ -2587,7 +2565,7 @@ export type POST_QUERY_RESULT = {
 
 // Source: src/sanity/queries.ts
 // Variable: POST_SLUGS_QUERY
-// Query: *[_type == "post" && defined(slug.current)]{"slug": slug.current}
+// Query: *[_type == "post" && language == $language && defined(slug.current)]{"slug": slug.current}
 export type POST_SLUGS_QUERY_RESULT = Array<{
   slug: string;
 }>;
@@ -2595,13 +2573,14 @@ export type POST_SLUGS_QUERY_RESULT = Array<{
 // Query TypeMap
 declare global {
   interface SanityQueries {
-    '\n  *[_id == "siteSettings"][0]{\n    siteTitle,\n    seo{title, description, image},\n    logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    logoOnLight{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    navItems[]{_key, \n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    secondaryLink{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    primaryCta{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    tagline,\n    footerColumns[]{_key, title, links[]{_key, \n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}},\n    contact{title, lines, link{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}},\n    legal{copyright, link{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}}\n  }\n': SETTINGS_QUERY_RESULT;
-    '\n  *[_type == "page" && select(\n    $slug == "" => _id == *[_id == "siteSettings"][0].homePage._ref,\n    slug.current == $slug\n  )][0]{\n    _id,\n    _type,\n    title,\n    "slug": slug.current,\n    "isHome": _id == *[_id == "siteSettings"][0].homePage._ref,\n    seo{title, description, image, noIndex},\n    \n  blocks[]{\n    _key,\n    _type,\n    \n  _type == "heroBlock" => {\n    eyebrow,\n    heading,\n    body,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    action,\n    buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    plateSearch{placeholder, buttonLabel, targetUrl},\n    height,\n    theme,\n    anchorId\n  }\n,\n    \n  _type == "pageHeroBlock" => {\n    eyebrow,\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    contactLines[]{_key, label, href},\n    media,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    codeMethod,\n    codePath,\n    code,\n    theme,\n    anchorId\n  }\n,\n    \n  _type == "anchorNavBlock" => {\n    items[]{_key, label, anchorId},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "productScreenBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    note,\n    screen,\n    layout,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "textMediaBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    list,\n    listStyle,\n    link{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    imagePosition,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "featureGridBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    headerLink{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]{\n      _key,\n      title,\n      body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n      image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n      link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n    },\n    variant,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "featureRowsBlock" => {\n    heading,\n    rows[]{_key, title, body, image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}, link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}, linkLabel},\n    style,\n    imagePosition,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "linkListBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    button{\n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]{_key, label, meta, link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "richTextBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    layout,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "imageBlock" => {\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    aspect,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "statsBlock" => {\n    items[]{_key, value, label},\n    theme,\n    background,\n    anchorId\n  }\n,\n    \n  _type == "logoGridBlock" => {\n    heading,\n    body,\n    button{\n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]->{_id, name, logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "integrationDirectoryBlock" => {\n    heading,\n    showFilter,\n    filterCategories,\n    labels,\n    "integrations": select(\n      count(items) > 0 => items[]->{\n  _id,\n  name,\n  shortName,\n  category,\n  shortDescription,\n  status,\n  logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n  "href": select(\n    defined(linkOverride.linkType) => linkOverride{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}.href,\n    hasDetailPage == true => "/integrations/" + slug.current,\n    null\n  )\n},\n      *[_type == "integration" && defined(slug.current)] | order(orderRank) {\n  _id,\n  name,\n  shortName,\n  category,\n  shortDescription,\n  status,\n  logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n  "href": select(\n    defined(linkOverride.linkType) => linkOverride{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}.href,\n    hasDetailPage == true => "/integrations/" + slug.current,\n    null\n  )\n}\n    ),\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "newsListBlock" => {\n    heading,\n    showFeatured,\n    showFilter,\n    pageSize,\n    labels,\n    "posts": *[_type == "post" && defined(slug.current)] | order(publishedAt desc) {\n  _id,\n  title,\n  "slug": slug.current,\n  publishedAt,\n  category,\n  excerpt,\n  featured,\n  mainImage{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "formBlock" => {\n    formType,\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    submitLabel,\n    finePrint[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    successHeading,\n    successBody,\n    errorText,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    layout,\n    headingLevel,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "ctaBannerBlock" => {\n    heading,\n    body,\n    "buttons": select(\n      count(buttons) > 0 => buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n      defined(button) => [button{"_key": "legacy", \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}],\n      []\n    ),\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    style,\n    overlayOpacity,\n    theme,\n    anchorId\n  }\n\n  }\n\n  }\n': PAGE_QUERY_RESULT;
-    '\n  *[_type == "page" && defined(slug.current)]{"slug": slug.current}\n': PAGE_SLUGS_QUERY_RESULT;
-    '\n  *[_type == "integration" && slug.current == $slug && hasDetailPage == true][0]{\n    _id,\n    _type,\n    name,\n    "slug": slug.current,\n    shortDescription,\n    seo{title, description, image, noIndex},\n    \n  blocks[]{\n    _key,\n    _type,\n    \n  _type == "heroBlock" => {\n    eyebrow,\n    heading,\n    body,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    action,\n    buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    plateSearch{placeholder, buttonLabel, targetUrl},\n    height,\n    theme,\n    anchorId\n  }\n,\n    \n  _type == "pageHeroBlock" => {\n    eyebrow,\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    contactLines[]{_key, label, href},\n    media,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    codeMethod,\n    codePath,\n    code,\n    theme,\n    anchorId\n  }\n,\n    \n  _type == "anchorNavBlock" => {\n    items[]{_key, label, anchorId},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "productScreenBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    note,\n    screen,\n    layout,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "textMediaBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    list,\n    listStyle,\n    link{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    imagePosition,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "featureGridBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    headerLink{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]{\n      _key,\n      title,\n      body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n      image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n      link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n    },\n    variant,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "featureRowsBlock" => {\n    heading,\n    rows[]{_key, title, body, image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}, link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}, linkLabel},\n    style,\n    imagePosition,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "linkListBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    button{\n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]{_key, label, meta, link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "richTextBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    layout,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "imageBlock" => {\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    aspect,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "statsBlock" => {\n    items[]{_key, value, label},\n    theme,\n    background,\n    anchorId\n  }\n,\n    \n  _type == "logoGridBlock" => {\n    heading,\n    body,\n    button{\n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]->{_id, name, logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "integrationDirectoryBlock" => {\n    heading,\n    showFilter,\n    filterCategories,\n    labels,\n    "integrations": select(\n      count(items) > 0 => items[]->{\n  _id,\n  name,\n  shortName,\n  category,\n  shortDescription,\n  status,\n  logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n  "href": select(\n    defined(linkOverride.linkType) => linkOverride{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}.href,\n    hasDetailPage == true => "/integrations/" + slug.current,\n    null\n  )\n},\n      *[_type == "integration" && defined(slug.current)] | order(orderRank) {\n  _id,\n  name,\n  shortName,\n  category,\n  shortDescription,\n  status,\n  logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n  "href": select(\n    defined(linkOverride.linkType) => linkOverride{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}.href,\n    hasDetailPage == true => "/integrations/" + slug.current,\n    null\n  )\n}\n    ),\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "newsListBlock" => {\n    heading,\n    showFeatured,\n    showFilter,\n    pageSize,\n    labels,\n    "posts": *[_type == "post" && defined(slug.current)] | order(publishedAt desc) {\n  _id,\n  title,\n  "slug": slug.current,\n  publishedAt,\n  category,\n  excerpt,\n  featured,\n  mainImage{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "formBlock" => {\n    formType,\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    submitLabel,\n    finePrint[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    successHeading,\n    successBody,\n    errorText,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    layout,\n    headingLevel,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "ctaBannerBlock" => {\n    heading,\n    body,\n    "buttons": select(\n      count(buttons) > 0 => buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n      defined(button) => [button{"_key": "legacy", \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}],\n      []\n    ),\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    style,\n    overlayOpacity,\n    theme,\n    anchorId\n  }\n\n  }\n\n  }\n': INTEGRATION_QUERY_RESULT;
-    '\n  *[_type == "integration" && hasDetailPage == true && defined(slug.current)]{"slug": slug.current}\n': INTEGRATION_SLUGS_QUERY_RESULT;
-    '\n  *[_type == "post" && slug.current == $slug][0]{\n    \n  _id,\n  title,\n  "slug": slug.current,\n  publishedAt,\n  category,\n  excerpt,\n  featured,\n  mainImage{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n,\n    _type,\n    body[]{\n      _type == "block" => {\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",\n      page->_type == "integration" => "/integrations/" + page->slug.current,\n      page->_type == "post" => "/news/" + page->slug.current,\n      "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n      _type == "image" => {_key, _type, caption, \n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n    },\n    seo{title, description, image, noIndex},\n    "related": *[_type == "post" && defined(slug.current) && slug.current != $slug]\n      | order(publishedAt desc)[0...3]{\n  _id,\n  title,\n  "slug": slug.current,\n  publishedAt,\n  category,\n  excerpt,\n  featured,\n  mainImage{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n}\n  }\n': POST_QUERY_RESULT;
-    '\n  *[_type == "post" && defined(slug.current)]{"slug": slug.current}\n': POST_SLUGS_QUERY_RESULT;
+    '\n  *[_type == "translation.metadata"]{\n    "items": translations[]{\n      language,\n      "type": value->_type,\n      "slug": value->slug.current,\n      "isHome": value->_id in *[_type == "siteSettings"].homePage._ref\n    }\n  }\n': TRANSLATIONS_QUERY_RESULT;
+    '\n  *[_type == "siteSettings" && language == $language][0]{\n    siteTitle,\n    seo{title, description, image},\n    logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    logoOnLight{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    navItems[]{_key, \n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    secondaryLink{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    primaryCta{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    tagline,\n    footerColumns[]{_key, title, links[]{_key, \n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}},\n    contact{title, lines, link{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}},\n    legal{copyright, link{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}}\n  }\n': SETTINGS_QUERY_RESULT;
+    '\n  *[_type == "page" && language == $language && select(\n    $slug == "" => _id == *[_type == "siteSettings" && language == $language][0].homePage._ref,\n    slug.current == $slug\n  )][0]{\n    _id,\n    _type,\n    title,\n    "slug": slug.current,\n    "isHome": _id == *[_type == "siteSettings" && language == $language][0].homePage._ref,\n    seo{title, description, image, noIndex},\n    \n  blocks[]{\n    _key,\n    _type,\n    \n  _type == "heroBlock" => {\n    eyebrow,\n    heading,\n    body,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    action,\n    buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    plateSearch{placeholder, buttonLabel, targetUrl},\n    height,\n    theme,\n    anchorId\n  }\n,\n    \n  _type == "pageHeroBlock" => {\n    eyebrow,\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    contactLines[]{_key, label, href},\n    media,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    codeMethod,\n    codePath,\n    code,\n    theme,\n    anchorId\n  }\n,\n    \n  _type == "anchorNavBlock" => {\n    items[]{_key, label, anchorId},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "productScreenBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    note,\n    screen,\n    layout,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "textMediaBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    list,\n    listStyle,\n    link{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    imagePosition,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "featureGridBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    headerLink{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]{\n      _key,\n      title,\n      body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n      image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n      link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n    },\n    variant,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "featureRowsBlock" => {\n    heading,\n    rows[]{_key, title, body, image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}, link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}, linkLabel},\n    style,\n    imagePosition,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "linkListBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    button{\n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]{_key, label, meta, link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "richTextBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    layout,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "imageBlock" => {\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    aspect,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "statsBlock" => {\n    items[]{_key, value, label},\n    theme,\n    background,\n    anchorId\n  }\n,\n    \n  _type == "logoGridBlock" => {\n    heading,\n    body,\n    button{\n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]->{_id, name, logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "integrationDirectoryBlock" => {\n    heading,\n    showFilter,\n    filterCategories,\n    labels,\n    "integrations": select(\n      count(items) > 0 => items[]->{\n  _id,\n  name,\n  shortName,\n  category,\n  shortDescription,\n  status,\n  logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n  "href": select(\n    defined(linkOverride.linkType) => linkOverride{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}.href,\n    hasDetailPage == true => string($prefix) + "/integrations/" + slug.current,\n    null\n  )\n},\n      *[_type == "integration" && language == $language && defined(slug.current)] | order(orderRank) {\n  _id,\n  name,\n  shortName,\n  category,\n  shortDescription,\n  status,\n  logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n  "href": select(\n    defined(linkOverride.linkType) => linkOverride{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}.href,\n    hasDetailPage == true => string($prefix) + "/integrations/" + slug.current,\n    null\n  )\n}\n    ),\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "newsListBlock" => {\n    heading,\n    showFeatured,\n    showFilter,\n    pageSize,\n    labels,\n    "posts": *[_type == "post" && language == $language && defined(slug.current)] | order(publishedAt desc) {\n  _id,\n  title,\n  "slug": slug.current,\n  publishedAt,\n  category,\n  excerpt,\n  featured,\n  mainImage{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "formBlock" => {\n    formType,\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    submitLabel,\n    finePrint[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    successHeading,\n    successBody,\n    errorText,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    layout,\n    headingLevel,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "ctaBannerBlock" => {\n    heading,\n    body,\n    "buttons": select(\n      count(buttons) > 0 => buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n      defined(button) => [button{"_key": "legacy", \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}],\n      []\n    ),\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    style,\n    overlayOpacity,\n    theme,\n    anchorId\n  }\n\n  }\n\n  }\n': PAGE_QUERY_RESULT;
+    '\n  *[_type == "page" && language == $language && defined(slug.current)]{"slug": slug.current}\n': PAGE_SLUGS_QUERY_RESULT;
+    '\n  *[_type == "integration" && language == $language && slug.current == $slug && hasDetailPage == true][0]{\n    _id,\n    _type,\n    name,\n    "slug": slug.current,\n    shortDescription,\n    seo{title, description, image, noIndex},\n    \n  blocks[]{\n    _key,\n    _type,\n    \n  _type == "heroBlock" => {\n    eyebrow,\n    heading,\n    body,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    action,\n    buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    plateSearch{placeholder, buttonLabel, targetUrl},\n    height,\n    theme,\n    anchorId\n  }\n,\n    \n  _type == "pageHeroBlock" => {\n    eyebrow,\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    contactLines[]{_key, label, href},\n    media,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    codeMethod,\n    codePath,\n    code,\n    theme,\n    anchorId\n  }\n,\n    \n  _type == "anchorNavBlock" => {\n    items[]{_key, label, anchorId},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "productScreenBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    note,\n    screen,\n    layout,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "textMediaBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    list,\n    listStyle,\n    link{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    imagePosition,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "featureGridBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    headerLink{\n  label,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]{\n      _key,\n      title,\n      body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n      image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n      link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n    },\n    variant,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "featureRowsBlock" => {\n    heading,\n    rows[]{_key, title, body, image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}, link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}, linkLabel},\n    style,\n    imagePosition,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "linkListBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    button{\n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]{_key, label, meta, link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "richTextBlock" => {\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    layout,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "imageBlock" => {\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    aspect,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "statsBlock" => {\n    items[]{_key, value, label},\n    theme,\n    background,\n    anchorId\n  }\n,\n    \n  _type == "logoGridBlock" => {\n    heading,\n    body,\n    button{\n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n    items[]->{_id, name, logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "integrationDirectoryBlock" => {\n    heading,\n    showFilter,\n    filterCategories,\n    labels,\n    "integrations": select(\n      count(items) > 0 => items[]->{\n  _id,\n  name,\n  shortName,\n  category,\n  shortDescription,\n  status,\n  logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n  "href": select(\n    defined(linkOverride.linkType) => linkOverride{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}.href,\n    hasDetailPage == true => string($prefix) + "/integrations/" + slug.current,\n    null\n  )\n},\n      *[_type == "integration" && language == $language && defined(slug.current)] | order(orderRank) {\n  _id,\n  name,\n  shortName,\n  category,\n  shortDescription,\n  status,\n  logo{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n  "href": select(\n    defined(linkOverride.linkType) => linkOverride{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}.href,\n    hasDetailPage == true => string($prefix) + "/integrations/" + slug.current,\n    null\n  )\n}\n    ),\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "newsListBlock" => {\n    heading,\n    showFeatured,\n    showFilter,\n    pageSize,\n    labels,\n    "posts": *[_type == "post" && language == $language && defined(slug.current)] | order(publishedAt desc) {\n  _id,\n  title,\n  "slug": slug.current,\n  publishedAt,\n  category,\n  excerpt,\n  featured,\n  mainImage{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n},\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "formBlock" => {\n    formType,\n    heading,\n    body[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    submitLabel,\n    finePrint[]{\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n    successHeading,\n    successBody,\n    errorText,\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    layout,\n    headingLevel,\n    \n  theme,\n  background,\n  anchorId,\n  paddingTop\n\n  }\n,\n    \n  _type == "ctaBannerBlock" => {\n    heading,\n    body,\n    "buttons": select(\n      count(buttons) > 0 => buttons[]{_key, \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n},\n      defined(button) => [button{"_key": "legacy", \n  label,\n  variant,\n  link{\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n}],\n      []\n    ),\n    image{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n},\n    style,\n    overlayOpacity,\n    theme,\n    anchorId\n  }\n\n  }\n\n  }\n': INTEGRATION_QUERY_RESULT;
+    '\n  *[_type == "integration" && language == $language && hasDetailPage == true && defined(slug.current)]{"slug": slug.current}\n': INTEGRATION_SLUGS_QUERY_RESULT;
+    '\n  *[_type == "post" && language == $language && slug.current == $slug][0]{\n    \n  _id,\n  title,\n  "slug": slug.current,\n  publishedAt,\n  category,\n  excerpt,\n  featured,\n  mainImage{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n,\n    _type,\n    body[]{\n      _type == "block" => {\n  ...,\n  markDefs[]{\n    ...,\n    _type == "link" => {\n  openInNewTab,\n  "href": select(\n    linkType == "internal" => select(\n      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),\n      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,\n      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,\n      string($prefix) + "/" + page->slug.current\n    ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),\n    url\n  )\n}\n  }\n},\n      _type == "image" => {_key, _type, caption, \n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n    },\n    seo{title, description, image, noIndex},\n    "related": *[_type == "post" && language == $language && defined(slug.current) && slug.current != $slug]\n      | order(publishedAt desc)[0...3]{\n  _id,\n  title,\n  "slug": slug.current,\n  publishedAt,\n  category,\n  excerpt,\n  featured,\n  mainImage{\n  alt,\n  hotspot,\n  crop,\n  asset->{_id, metadata{lqip, dimensions{width, height}}}\n}\n}\n  }\n': POST_QUERY_RESULT;
+    '\n  *[_type == "post" && language == $language && defined(slug.current)]{"slug": slug.current}\n': POST_SLUGS_QUERY_RESULT;
   }
 }
 // Lets @sanity/client releases that predate the global registry read it too

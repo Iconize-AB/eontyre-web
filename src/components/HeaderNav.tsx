@@ -3,6 +3,9 @@
 import {usePathname} from 'next/navigation'
 import {useState, type ReactNode} from 'react'
 
+import {LanguageSwitcher} from '@/i18n/LanguageSwitcher'
+import {useDictionary} from '@/i18n/LocaleProvider'
+import {pathWithoutLocale} from '@/i18n/paths'
 import type {NavItemData} from '@/sanity/content-types'
 
 import {SmartLink} from './SmartLink'
@@ -22,10 +25,12 @@ const ctaLink =
 
 export function HeaderNav({logo, navItems, secondaryLink, primaryCta}: HeaderNavProps) {
   const pathname = usePathname()
+  const {header} = useDictionary()
   const [open, setOpen] = useState(false)
 
+  // The home page ("/", or "/sv" under a path prefix) is never marked as the active page.
   const isActive = (href: string | null | undefined) =>
-    !!href && href !== '/' && (pathname === href || pathname.startsWith(`${href}/`))
+    !!href && pathWithoutLocale(href) !== '/' && (pathname === href || pathname.startsWith(`${href}/`))
 
   const links = navItems.map((item) => (
     <SmartLink
@@ -42,11 +47,12 @@ export function HeaderNav({logo, navItems, secondaryLink, primaryCta}: HeaderNav
     <div className="container-site flex min-h-16 flex-wrap items-center justify-between gap-5">
       {logo}
 
-      <nav aria-label="Main" className="hidden items-center gap-[clamp(16px,2.4vw,32px)] nav:flex">
+      <nav aria-label={header.mainNav} className="hidden items-center gap-[clamp(16px,2.4vw,32px)] nav:flex">
         {links}
       </nav>
 
       <div className="hidden items-center gap-5 nav:flex">
+        <LanguageSwitcher />
         {secondaryLink && (
           <SmartLink link={secondaryLink.link} className="text-[15px] font-medium text-fg">
             {secondaryLink.label}
@@ -66,16 +72,17 @@ export function HeaderNav({logo, navItems, secondaryLink, primaryCta}: HeaderNav
         aria-controls="mobile-menu"
         onClick={() => setOpen((value) => !value)}
       >
-        {open ? 'Close' : 'Menu'}
+        {open ? header.closeMenu : header.menu}
       </button>
 
       {open && (
         // Clicking any link in the panel closes it.
         <div id="mobile-menu" className="flex w-full flex-col pb-6 nav:hidden" onClick={() => setOpen(false)}>
-          <nav aria-label="Main" className="flex flex-col [&>a]:py-3 [&>a]:after:hidden">
+          <nav aria-label={header.mainNav} className="flex flex-col [&>a]:py-3 [&>a]:after:hidden">
             {links}
           </nav>
           <div className="mt-4 flex flex-wrap items-center gap-5 border-t border-line pt-5">
+            <LanguageSwitcher labels="full" className="w-full" />
             {secondaryLink && (
               <SmartLink link={secondaryLink.link} className="text-[15px] font-medium text-fg">
                 {secondaryLink.label}

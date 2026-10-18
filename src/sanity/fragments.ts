@@ -4,17 +4,19 @@
  */
 
 /**
- * Resolves a `link` object to `href`. Internal links to the home page become "/",
- * integrations and posts get their template paths, and an optional anchor is appended.
+ * Resolves a `link` object to `href`. Internal links go to the page in its own language:
+ * $prefix is "" on a language's own domain or "/sv" under a path prefix, and $home is the
+ * home page's address (see i18nParams). Integrations and posts get their template paths,
+ * and an optional anchor is appended.
  */
 export const linkFields = /* groq */ `
   openInNewTab,
   "href": select(
     linkType == "internal" => select(
-      page._ref == *[_id == "siteSettings"][0].homePage._ref => "/",
-      page->_type == "integration" => "/integrations/" + page->slug.current,
-      page->_type == "post" => "/news/" + page->slug.current,
-      "/" + page->slug.current
+      page._ref in *[_type == "siteSettings"].homePage._ref => string($home),
+      page->_type == "integration" => string($prefix) + "/integrations/" + page->slug.current,
+      page->_type == "post" => string($prefix) + "/news/" + page->slug.current,
+      string($prefix) + "/" + page->slug.current
     ) + select(defined(anchor) && anchor != "" => "#" + anchor, ""),
     url
   )

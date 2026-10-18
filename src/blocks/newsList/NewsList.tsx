@@ -14,10 +14,11 @@ interface Props {
   showFilter: boolean
   pageSize: number
   labels: {all: string; loadMore: string}
+  filterLabel: string
 }
 
 /** Category filter and "Load more" paging for the news list. */
-export function NewsList({rows, rowCategories, categories, showFilter, pageSize, labels}: Props) {
+export function NewsList({rows, rowCategories, categories, showFilter, pageSize, labels, filterLabel}: Props) {
   const [active, setActive] = useState(ALL)
   const [visibleCount, setVisibleCount] = useState(pageSize)
 
@@ -33,7 +34,7 @@ export function NewsList({rows, rowCategories, categories, showFilter, pageSize,
     <>
       {showFilter && categories.length > 1 && (
         <div className="mb-2 border-y border-hairline py-6">
-          <FilterChips chips={chips} active={active} onChange={select} label="Filter by category" />
+          <FilterChips chips={chips} active={active} onChange={select} label={filterLabel} />
         </div>
       )}
       <ul>{filtered.slice(0, visibleCount)}</ul>

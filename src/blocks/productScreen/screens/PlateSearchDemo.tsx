@@ -3,6 +3,9 @@
 import {useSearchParams} from 'next/navigation'
 import {useState, type FormEvent} from 'react'
 
+import {useDictionary} from '@/i18n/LocaleProvider'
+import {fill} from '@/i18n/dictionaries'
+
 import {demoPresets, demoVehicles, formatPlate, normalizePlate} from './plateSearchDemoData'
 
 const DEFAULT_PLATE = 'ABC 123'
@@ -25,6 +28,10 @@ function PlateSearchDemoView({initialPlate}: {initialPlate: string}) {
   const [input, setInput] = useState(initialPlate)
   const [plate, setPlate] = useState(normalizePlate(initialPlate))
   const vehicle = demoVehicles[plate]
+  const dictionary = useDictionary()
+  const {plateDemo: text, plate: plateText} = dictionary
+  const money = (amount: number) =>
+    fill(text.price, {amount: new Intl.NumberFormat(dictionary.numberLocale).format(amount)})
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -44,10 +51,10 @@ function PlateSearchDemoView({initialPlate}: {initialPlate: string}) {
             aria-hidden="true"
             className="flex w-[34px] shrink-0 items-end justify-center bg-plate pb-1.5 text-[13px] font-bold text-white"
           >
-            S
+            {plateText.countryCode}
           </span>
           <label htmlFor="plate-demo" className="sr-only">
-            Registration number
+            {plateText.label}
           </label>
           <input
             id="plate-demo"
@@ -64,7 +71,7 @@ function PlateSearchDemoView({initialPlate}: {initialPlate: string}) {
           type="submit"
           className="min-h-14 cursor-pointer rounded-full bg-accent px-[22px] text-[16px] font-semibold whitespace-nowrap text-on-accent transition-colors duration-150 hover:bg-accent-hover"
         >
-          Find tyres
+          {text.find}
         </button>
       </form>
 
@@ -97,18 +104,19 @@ function PlateSearchDemoView({initialPlate}: {initialPlate: string}) {
                   <span className="text-[16px] font-semibold">
                     {result.brand} {result.model}
                   </span>
-                  <span className="text-right text-[16px] font-bold whitespace-nowrap">{result.price}</span>
+                  <span className="text-right text-[16px] font-bold whitespace-nowrap">{money(result.price)}</span>
                   <span className="text-[14px] text-fg-subtle">
-                    {result.source} · {result.qty} · {result.delivery}
+                    {text.sources[result.source]} · {fill(text.stock[result.stock], {count: result.count})} ·{' '}
+                    {text.delivery[result.delivery]}
                   </span>
-                  <span className="text-right text-[13px] whitespace-nowrap text-fg-subtle">EU {result.euLabel}</span>
+                  <span className="text-right text-[13px] whitespace-nowrap text-fg-subtle">{text.euLabel} {result.euLabel}</span>
                 </li>
               ))}
             </ul>
           </div>
         ) : (
           <p className="text-[15px] text-fg-subtle">
-            No car with that registration number in the demo. Try one of the numbers above.
+            {text.notFound}
           </p>
         )}
       </div>

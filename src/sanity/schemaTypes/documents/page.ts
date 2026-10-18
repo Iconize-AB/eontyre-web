@@ -2,6 +2,7 @@ import {DocumentIcon} from '@sanity/icons/Document'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
 import {blockTypeNames} from '../../../blocks/schemas'
+import {isUniqueInLanguage, languageField} from '../language'
 
 export const page = defineType({
   name: 'page',
@@ -13,6 +14,7 @@ export const page = defineType({
     {name: 'seo', title: 'SEO'},
   ],
   fields: [
+    languageField,
     defineField({
       name: 'title',
       title: 'Title',
@@ -26,7 +28,7 @@ export const page = defineType({
       type: 'slug',
       group: 'content',
       description: 'For example "webshop" or "integrations/fortnox". The home page is chosen in Site settings.',
-      options: {source: 'title', maxLength: 96},
+      options: {source: 'title', maxLength: 96, isUnique: isUniqueInLanguage},
       validation: (rule) =>
         rule.required().custom((slug) => {
           const value = slug?.current

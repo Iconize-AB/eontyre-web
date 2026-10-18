@@ -20,9 +20,20 @@ In the Sanity dashboard (project `vitk5ups`) → API → CORS origins, add `http
 
 ## Scripts
 
-- `npm run seed` recreates all pages, Site settings and integrations, using the images already in Sanity. It replaces those documents, which overwrites any edits made in the Studio, so don't run it once content is being edited there.
+- `npm run seed` recreates all pages, Site settings, integrations and draft posts in every language, using the images already in Sanity. It replaces those documents, which overwrites any edits made in the Studio, so don't run it once content is being edited there.
 - `npm run typegen` regenerates `src/sanity/schema.json` and `src/sanity/types.ts`. Run it after changing a schema or a query.
 - `npm run type-check`, `npm run lint` and `npm run build` check the code.
+
+## Languages
+
+The site is published in Swedish (`sv`), English (`en`), Norwegian Bokmål (`nb`) and Finnish (`fi`). Every page lives under `/[locale]`, and `src/proxy.ts` decides the language of each request.
+
+- **One domain per language** (recommended for production): set `NEXT_PUBLIC_LOCALE_DOMAINS="sv=eontyre.se,en=eontyre.com,nb=eontyre.no,fi=eontyre.fi"` (Production environment only). Each domain then serves its language at `/`, with no prefix in the address, and the language switcher links across domains. Add all four domains to the Vercel project.
+- **Path prefix** (local development, previews, and any host without a language): leave the variable empty. Pages are served at `/sv/…`, `/en/…`, `/nb/…`, `/fi/…`, and `/` redirects to the visitor's browser language.
+- **Content** is translated per document with `@sanity/document-internationalization`: every page, integration, news post and Site settings document exists once per language, linked by a translation record. In the Studio, lists are split per language, and the "Translations" button on a document creates or opens its other versions. Slugs only need to be unique within a language.
+- **Switcher and hreflang** use the translation links to find a page's address in the other languages. Those records are private in Sanity, so the site needs `SANITY_API_READ_TOKEN`; without it the switcher assumes a page has the same address in every language.
+- **Interface texts in code** (form labels, filters, the booking calendar and plate-search demos, the 404 page) are in `src/i18n/dictionaries/`, one file per language. Blocks with editable "Interface texts" fall back to these when a field is empty.
+- **Seed:** `npm run seed` creates the content in all four languages. English is the source; the other languages come from `scripts/translations/<lang>.json` (English string → translation). After changing seed copy, run `npm run seed -- --extract` to list the strings that need translating.
 
 ## How content is structured
 

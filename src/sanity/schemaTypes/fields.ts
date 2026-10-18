@@ -105,16 +105,21 @@ export function blockSettingsFields({
   ]
 }
 
-/** Small interface texts (button labels, empty states) with sensible defaults. */
+/**
+ * Small interface texts (button labels, empty states). Left empty, each language
+ * shows its own built-in default, so a translated block needs no extra work.
+ */
 export function labelsField(labels: {name: string; title: string; initialValue: string}[]) {
   return defineField({
     name: 'labels',
     title: 'Interface texts',
     type: 'object',
     group: 'content',
+    description: 'Optional. Leave a text empty to use the built-in text for this language.',
     options: {collapsible: true, collapsed: true},
-    fields: labels.map((label) => defineField({...label, type: 'string'})),
-    initialValue: Object.fromEntries(labels.map((label) => [label.name, label.initialValue])),
+    fields: labels.map(({initialValue, ...label}) =>
+      defineField({...label, type: 'string', description: `Built-in text in English: "${initialValue}"`}),
+    ),
   })
 }
 

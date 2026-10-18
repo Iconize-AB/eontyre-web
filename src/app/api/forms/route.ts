@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
   // account in the Eontyre app is undecided, and a password must not go to a lead inbox.
   const values = {...result.values}
   delete values.password
-  const submission = {formType, values, submittedAt: new Date().toISOString()}
+  const locale = typeof input.locale === 'string' ? input.locale : undefined
+  const submission = {formType, locale, values, submittedAt: new Date().toISOString()}
 
   const webhook = process.env.FORMS_WEBHOOK_URL
   if (webhook) {

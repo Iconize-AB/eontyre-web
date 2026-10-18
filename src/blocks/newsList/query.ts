@@ -18,7 +18,7 @@ export const newsListBlockFields = /* groq */ `
     showFilter,
     pageSize,
     labels,
-    "posts": *[_type == "post" && defined(slug.current)] | order(publishedAt desc) {${postCardFields}},
+    "posts": *[_type == "post" && language == $language && defined(slug.current)] | order(publishedAt desc) {${postCardFields}},
     ${blockSettings}
   }
 `

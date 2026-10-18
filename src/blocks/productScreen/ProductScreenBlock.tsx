@@ -3,18 +3,20 @@ import {Suspense} from 'react'
 
 import {RichText} from '@/components/RichText'
 import {Section} from '@/components/Section'
+import type {Dictionary} from '@/i18n/dictionaries'
+import {getDictionary} from '@/i18n/server'
 import type {BlockOf} from '@/sanity/content-types'
 
 import {BookingCalendar} from './screens/BookingCalendar'
 import {OrderSummary} from './screens/OrderSummary'
 import {PlateSearchDemo, PlateSearchDemoFallback} from './screens/PlateSearchDemo'
 
-function Screen({screen}: {screen: string | null}) {
+function Screen({screen, dictionary}: {screen: string | null; dictionary: Dictionary}) {
   switch (screen) {
     case 'bookingCalendar':
-      return <BookingCalendar />
+      return <BookingCalendar dictionary={dictionary} />
     case 'orderSummary':
-      return <OrderSummary />
+      return <OrderSummary dictionary={dictionary} />
     case 'plateSearchDemo':
       return (
         <Suspense fallback={<PlateSearchDemoFallback />}>
@@ -26,7 +28,8 @@ function Screen({screen}: {screen: string | null}) {
   }
 }
 
-export function ProductScreenBlock({block}: {block: BlockOf<'productScreenBlock'>}) {
+export async function ProductScreenBlock({block}: {block: BlockOf<'productScreenBlock'>}) {
+  const dictionary = await getDictionary()
   const screen = stegaClean(block.screen)
   const layout = stegaClean(block.layout) || (screen === 'bookingCalendar' ? 'stacked' : 'split')
   const note = block.note && <p className="mt-4 text-[15px] leading-[1.55] text-fg-subtle">{block.note}</p>
@@ -42,7 +45,7 @@ export function ProductScreenBlock({block}: {block: BlockOf<'productScreenBlock'
               {note}
             </div>
           </div>
-          <Screen screen={screen} />
+          <Screen screen={screen} dictionary={dictionary} />
         </div>
       </Section>
     )
@@ -56,7 +59,7 @@ export function ProductScreenBlock({block}: {block: BlockOf<'productScreenBlock'
           <RichText value={block.body} />
           {note}
         </div>
-        <Screen screen={screen} />
+        <Screen screen={screen} dictionary={dictionary} />
       </div>
     </Section>
   )

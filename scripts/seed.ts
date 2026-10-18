@@ -1,9 +1,12 @@
 /**
  * Seeds every page (scripts/seed-pages.ts), Site settings, the 14 integrations
- * and the placeholder news posts. Safe to re-run: documents use fixed IDs and
- * are replaced, so edits made in the Studio to these documents are overwritten.
+ * and the placeholder news posts, once for each language (sv, en, nb, fi).
+ * English is the source; the other languages come from scripts/translations/*.json.
+ * Safe to re-run: documents use fixed IDs and are replaced, so edits made in the
+ * Studio to these documents are overwritten.
  *
  *   npm run seed
+ *   npm run seed -- --extract     writes scripts/translations/source.json and exits
  *   SEED_ASSETS_DIR=path/to/handoff/reference/site/assets npm run seed
  *
  * Images are reused from the Sanity media library by filename. Set
@@ -16,11 +19,16 @@ import path from 'node:path'
 import {LexoRank} from 'lexorank'
 import {createClient} from 'next-sanity'
 
+import {writeFileSync} from 'node:fs'
+
 import {image, key, link, navItem, pt, type Images} from './seed-helpers'
 import {buildPages, integrationData, posBlocks, postData} from './seed-pages'
+import {collectStrings, idInLanguage, LANGS, localize, type Lang} from './seed-i18n'
+
+const extractOnly = process.argv.includes('--extract')
 
 const token = process.env.SANITY_API_WRITE_TOKEN
-if (!token) throw new Error('Missing SANITY_API_WRITE_TOKEN in .env.local')
+if (!token && !extractOnly) throw new Error('Missing SANITY_API_WRITE_TOKEN in .env.local')
 
 const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
@@ -126,20 +134,13 @@ function siteSettings(img: Images) {
   }
 }
 
-/** Integrations seeded in phase 1 that phase 2 replaces. */
-const obsoleteIds = ['integration-point-of-sale']
-
-async function seed() {
-  console.log(`Seeding ${client.config().projectId}/${client.config().dataset}`)
-  const img = await loadImages()
-
-  const tx = client.transaction()
-
+/** The English documents every language is made from, with their base ids. */
+function englishDocuments(img: Images) {
   // Lexorank strings, so the order can be changed by dragging in the Studio.
   let rank = LexoRank.middle()
-  for (const integration of integrationData) {
+  const integrations = integrationData.map((integration) => {
     const isPos = integration.id === 'integrated-point-of-sale'
-    tx.createOrReplace({
+    const doc = {
       _id: `integration-${integration.id}`,
       _type: 'integration',
       name: integration.name,
@@ -152,38 +153,95 @@ async function seed() {
       ...(isPos && {blocks: posBlocks(img)}),
       ...(integration.linkOverride && {linkOverride: link(integration.linkOverride)}),
       orderRank: rank.toString(),
-    })
+    }
     rank = rank.genNext().genNext()
-  }
-
-  // Pages next: links in Site settings and on other pages reference them.
-  const pages = buildPages(img)
-  for (const doc of pages) tx.createOrReplace(doc)
-  tx.createOrReplace(siteSettings(img))
+    return doc
+  })
 
   // All news posts are placeholders, so they are created as drafts only.
-  for (const post of postData) {
-    tx.createOrReplace({
-      _id: `drafts.post-${post.id}`,
-      _type: 'post',
-      title: post.title,
-      slug: {_type: 'slug', current: post.id},
-      publishedAt: post.date,
-      category: post.category,
-      excerpt: post.excerpt,
-      featured: Boolean(post.featured),
-      ...(post.image && {mainImage: image(img[post.image], post.imageAlt ?? '')}),
-      body: pt(post.excerpt),
-    })
+  const posts = postData.map((post) => ({
+    _id: `drafts.post-${post.id}`,
+    _type: 'post',
+    title: post.title,
+    slug: {_type: 'slug', current: post.id},
+    publishedAt: post.date,
+    category: post.category,
+    excerpt: post.excerpt,
+    featured: Boolean(post.featured),
+    ...(post.image && {mainImage: image(img[post.image], post.imageAlt ?? '')}),
+    body: pt(post.excerpt),
+  }))
+
+  return [...buildPages(img), siteSettings(img), ...integrations, ...posts]
+}
+
+/** Links the language versions of a document, for the Studio's translation tools and the language switcher. */
+function metadataDocument(baseId: string, type: string) {
+  const isDraftOnly = baseId.startsWith('drafts.')
+  const publishedBase = baseId.replace(/^drafts\./, '')
+  return {
+    _id: `translation.metadata.${publishedBase}`,
+    _type: 'translation.metadata',
+    schemaTypes: [type],
+    translations: LANGS.map((lang) => ({
+      _key: key(),
+      _type: 'internationalizedArrayReferenceValue',
+      language: lang,
+      value: {
+        _type: 'reference',
+        _ref: idInLanguage(publishedBase, lang),
+        // Drafts have no published document yet, so the reference is weak until they are published.
+        ...(isDraftOnly && {_weak: true, _strengthenOnPublish: {type}}),
+      },
+    })),
+  }
+}
+
+/** Seeded in phase 1 and no longer part of the content. */
+const obsoleteIds = ['integration-point-of-sale']
+
+async function seed() {
+  const english = (await englishForRun()).docs
+  const sources = collectStrings(english)
+
+  if (extractOnly) {
+    writeFileSync('scripts/translations/source.json', JSON.stringify(sources, null, 2) + '\n')
+    console.log(`Wrote ${sources.length} strings to scripts/translations/source.json`)
+    return
   }
 
-  // Replaced in this transaction above, so nothing references them any more.
+  console.log(`Seeding ${client.config().projectId}/${client.config().dataset}`)
+  const reports = Object.fromEntries(LANGS.map((lang) => [lang, {missing: new Set<string>()}])) as Record<
+    Lang,
+    {missing: Set<string>}
+  >
+  const tx = client.transaction()
+
+  for (const lang of LANGS) {
+    for (const doc of english) tx.createOrReplace(localize(doc, lang, reports[lang]) as never)
+  }
+  for (const doc of english) {
+    const {_id, _type} = doc as {_id: string; _type: string}
+    tx.createOrReplace(metadataDocument(_id, _type) as never)
+    // The pre-translation (English only) documents are replaced by the "-en" ones.
+    tx.delete(_id)
+  }
   for (const id of obsoleteIds) tx.delete(id)
 
   await tx.commit()
-  console.log(
-    `Done: ${pages.length} pages, ${integrationData.length} integrations, Site settings and ${postData.length} draft posts.`,
-  )
+  console.log(`Done: ${english.length} documents in each of ${LANGS.join(', ')}.`)
+  for (const lang of LANGS) {
+    const missing = reports[lang].missing.size
+    if (missing) console.log(`  ${lang}: ${missing} strings without a translation (left in English)`)
+  }
+}
+
+/** The English documents, with image ids looked up in Sanity (or made up when only extracting strings). */
+async function englishForRun() {
+  const img = extractOnly
+    ? (Object.fromEntries(Object.keys(imageFiles).map((name) => [name, `image-${name}-1x1-png`])) as Images)
+    : await loadImages()
+  return {docs: englishDocuments(img)}
 }
 
 seed().catch((error) => {

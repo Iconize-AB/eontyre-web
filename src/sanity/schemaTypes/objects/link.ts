@@ -1,6 +1,8 @@
 import {LinkIcon} from '@sanity/icons/Link'
 import {defineField, defineType} from 'sanity'
 
+import {sameLanguage} from '../language'
+
 export const link = defineType({
   name: 'link',
   title: 'Link',
@@ -27,6 +29,7 @@ export const link = defineType({
       title: 'Page',
       type: 'reference',
       to: [{type: 'page'}, {type: 'integration'}, {type: 'post'}],
+      options: sameLanguage,
       hidden: ({parent}) => parent?.linkType !== 'internal',
       validation: (rule) =>
         rule.custom((value, {parent}) =>

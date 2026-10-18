@@ -3,6 +3,8 @@ import {stegaClean} from 'next-sanity'
 
 import type {SettingsData} from '@/sanity/content-types'
 import {cachedSanity, getDraftFetchOptions, publishedFetchOptions} from '@/sanity/live'
+import {getLocale} from '@/i18n/server'
+import {i18nParams} from '@/sanity/params'
 import {SETTINGS_QUERY} from '@/sanity/queries'
 
 import {HeaderNav} from './HeaderNav'
@@ -17,7 +19,8 @@ async function currentYear() {
 
 async function getSettings(draft: boolean) {
   const options = draft ? await getDraftFetchOptions() : publishedFetchOptions
-  const {data} = await cachedSanity({query: SETTINGS_QUERY, ...options})
+  const locale = await getLocale()
+  const {data} = await cachedSanity({query: SETTINGS_QUERY, params: i18nParams(locale), ...options})
   return data as SettingsData | null
 }
 

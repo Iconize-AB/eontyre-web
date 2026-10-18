@@ -3,6 +3,8 @@
 import {useRouter} from 'next/navigation'
 import type {FormEvent} from 'react'
 
+import {useDictionary, useLocalizedPath} from '@/i18n/LocaleProvider'
+
 interface PlateSearchProps {
   placeholder: string
   buttonLabel: string
@@ -12,6 +14,9 @@ interface PlateSearchProps {
 /** Sends the plate to the webshop as ?plate=ABC123. Works as a plain GET form without JS. */
 export function PlateSearch({placeholder, buttonLabel, targetUrl}: PlateSearchProps) {
   const router = useRouter()
+  const {plate: text} = useDictionary()
+  const localize = useLocalizedPath()
+  const action = localize(targetUrl)
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -19,12 +24,12 @@ export function PlateSearch({placeholder, buttonLabel, targetUrl}: PlateSearchPr
     const plate = String(raw ?? '')
       .toUpperCase()
       .replace(/[^A-Z0-9ÅÄÖÆØ]/g, '')
-    router.push(plate ? `${targetUrl}?plate=${encodeURIComponent(plate)}` : targetUrl)
+    router.push(plate ? `${action}?plate=${encodeURIComponent(plate)}` : action)
   }
 
   return (
     <form
-      action={targetUrl}
+      action={action}
       onSubmit={onSubmit}
       className="flex w-full max-w-[520px] flex-wrap gap-2 justify-self-end"
     >
@@ -33,10 +38,10 @@ export function PlateSearch({placeholder, buttonLabel, targetUrl}: PlateSearchPr
           aria-hidden="true"
           className="flex w-[34px] shrink-0 items-end justify-center bg-plate pb-1.5 text-[13px] font-bold text-white"
         >
-          S
+          {text.countryCode}
         </span>
         <label htmlFor="plate-search" className="sr-only">
-          Registration number
+          {text.label}
         </label>
         <input
           id="plate-search"

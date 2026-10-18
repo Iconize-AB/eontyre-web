@@ -49,7 +49,7 @@ export const formBlock = defineType({
       title: 'Error text',
       type: 'string',
       group: 'content',
-      initialValue: 'Something went wrong. Please try again, or call us.',
+      description: 'Optional. Leave empty to use the built-in text for this language.',
     }),
     imageField({name: 'image', title: 'Image', group: 'content', description: 'Used by the "With image" layout.'}),
     defineField({

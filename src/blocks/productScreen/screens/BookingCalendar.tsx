@@ -1,5 +1,7 @@
 import type {CSSProperties, ReactNode} from 'react'
 
+import {fill, type Dictionary} from '@/i18n/dictionaries'
+
 import {demoBookings, demoWeek, type Booking, type Source} from './bookingCalendarDemo'
 
 /*
@@ -32,25 +34,36 @@ function slots() {
   return result
 }
 
-export function BookingCalendar() {
+/** Weekday and date names in the calendar's language: "Mon" / "mån", "Sep 28" / "28 sep.". */
+function dayLabels(dateLocale: string) {
+  const weekday = new Intl.DateTimeFormat(dateLocale, {weekday: 'short', timeZone: 'UTC'})
+  const date = new Intl.DateTimeFormat(dateLocale, {day: 'numeric', month: 'short', timeZone: 'UTC'})
+  const days = demoWeek.days.map((iso) => ({weekday: weekday.format(new Date(iso)), date: date.format(new Date(iso))}))
+  const range = `${days[0].date}–${days[days.length - 1].date}`
+  return {days, range}
+}
+
+export function BookingCalendar({dictionary}: {dictionary: Dictionary}) {
+  const text = dictionary.calendar
+  const {days, range} = dayLabels(text.dateLocale)
   const timeSlots = slots()
   const gridHeight = timeSlots.length * ROW_HEIGHT
 
   return (
     <div
       role="img"
-      aria-label="Example of the Eontyre booking calendar, week view"
+      aria-label={text.ariaLabel}
       // Focusable so keyboard users can scroll it sideways on small screens.
       tabIndex={0}
       className="overflow-x-auto rounded-[8px] border border-[#34302D] bg-white font-sans text-[#141414] shadow-[0_30px_60px_-40px_rgba(40,25,10,0.3)]"
     >
       <div aria-hidden="true" className="min-w-[1500px]">
-        <Toolbar />
-        <Legend />
+        <Toolbar text={text} range={range} />
+        <Legend text={text} />
 
         <div className="grid grid-cols-[64px_repeat(7,minmax(0,1fr))] border-b border-[#E6E6E6]">
           <span />
-          {demoWeek.days.map((day, index) => {
+          {days.map((day, index) => {
             const tone = index === 5 ? 'saturday' : index === 6 ? 'sunday' : 'weekday'
             return (
               <div
@@ -78,7 +91,7 @@ export function BookingCalendar() {
               </span>
             ))}
           </div>
-          {demoWeek.days.map((day, index) => (
+          {days.map((day, index) => (
             <div
               key={day.date}
               className={`relative border-l border-[#E6E6E6] ${index >= 5 ? 'bg-[#F7F7F7]' : 'bg-white'}`}
@@ -90,7 +103,7 @@ export function BookingCalendar() {
               {demoBookings
                 .filter((booking) => booking.day === index)
                 .map((booking) => (
-                  <BookingCard key={`${booking.kind}-${booking.start}`} booking={booking} />
+                  <BookingCard key={`${booking.kind}-${booking.start}`} booking={booking} text={text} />
                 ))}
             </div>
           ))}
@@ -100,7 +113,9 @@ export function BookingCalendar() {
   )
 }
 
-function BookingCard({booking}: {booking: Booking}) {
+type CalendarText = Dictionary['calendar']
+
+function BookingCard({booking, text}: {booking: Booking; text: CalendarText}) {
   const top = toPx(minutes(booking.start) - minutes(demoWeek.firstSlot))
   const height = toPx(minutes(booking.end) - minutes(booking.start))
   const position: CSSProperties = {top}
@@ -113,8 +128,8 @@ function BookingCard({booking}: {booking: Booking}) {
           // 2px shorter than the slot so back-to-back bookings don't touch.
           style={{...position, height: height - 2, borderLeft: `3px solid ${sourceColor[booking.source]}`}}
         >
-          <b className="text-[12px] whitespace-nowrap">{booking.plate}</b>
-          <span className="min-w-0 flex-1 truncate text-[#6B6B6B]">{booking.service}</span>
+          <b className="text-[12px] whitespace-nowrap">{booking.plate ?? text.unknown}</b>
+          <span className="min-w-0 flex-1 truncate text-[#6B6B6B]">{text.services[booking.service]}</span>
           <span className="flex-none text-[11px] whitespace-nowrap text-[#6B6B6B]">
             {booking.start}–{booking.end}
           </span>
@@ -129,14 +144,14 @@ function BookingCard({booking}: {booking: Booking}) {
           style={{...position, borderLeft: `3px solid ${sourceColor[booking.items[0]?.source ?? 'admin']}`}}
         >
           <div className="truncate border-b border-[#EFEFEF] bg-[#F7F7F7] px-2.5 py-[5px] text-[11px] text-[#4A4A4A]">
-            [{booking.items.length} bookings] · {booking.start}–{booking.end}
+            {fill(text.bookings, {count: booking.items.length})} · {booking.start}–{booking.end}
           </div>
           {booking.items.map((item, index) => (
             <div key={index} className="ml-1.5" style={{borderLeft: `3px solid ${sourceColor[item.source]}`}}>
               <div className="flex h-[30px] items-center gap-1.5 overflow-hidden border-b border-[#EFEFEF] px-2 text-[12px]">
                 <SourceIcon source={item.source} />
-                <b className="text-[13px] whitespace-nowrap">{item.plate}</b>
-                <span className="min-w-0 flex-1 truncate text-[#6B6B6B]">{item.service}</span>
+                <b className="text-[13px] whitespace-nowrap">{item.plate ?? text.unknown}</b>
+                <span className="min-w-0 flex-1 truncate text-[#6B6B6B]">{text.services[item.service]}</span>
                 <span className="flex-none text-[11px] whitespace-nowrap text-[#6B6B6B]">
                   {item.start}–{item.end}
                 </span>
@@ -158,7 +173,7 @@ function BookingCard({booking}: {booking: Booking}) {
               {booking.start}–{booking.end}
             </span>
           </div>
-          <span className="text-[11px] text-[#4A4A4A]">{booking.service}</span>
+          <span className="text-[11px] text-[#4A4A4A]">{text.services[booking.service]}</span>
           <div className="mt-auto flex items-center gap-1.5">
             <Icon stroke="#2E9E5B" width={1.4}>
               <circle cx="8" cy="8" r="6.2" />
@@ -183,9 +198,11 @@ function BookingCard({booking}: {booking: Booking}) {
         >
           <span className="flex items-center gap-1.5 overflow-hidden text-[12px] whitespace-nowrap text-[#C46A0A]">
             <LockIcon stroke="#C46A0A" size={12} />
-            <span className="min-w-0 truncate">{booking.label}</span>
+            <span className="min-w-0 truncate">
+              {text.closedLift} · {booking.year} - {text.services[booking.service]}
+            </span>
           </span>
-          <span className="text-[14px] font-semibold">Closed</span>
+          <span className="text-[14px] font-semibold">{text.closed}</span>
           <span className="text-[11px] text-[#6B6B6B]">
             {booking.start}–{booking.end}
           </span>
@@ -194,74 +211,77 @@ function BookingCard({booking}: {booking: Booking}) {
   }
 }
 
-function Toolbar() {
+function Toolbar({text, range}: {text: CalendarText; range: string}) {
   const control =
     'flex h-[38px] items-center gap-2 whitespace-nowrap rounded-[6px] border border-[#E2E2E2] bg-white px-3.5 text-[14px] font-medium'
 
   return (
     <div className="flex items-center gap-2.5 border-b border-[#EAEAEA] px-4 py-3">
       <div className="flex gap-0.5 rounded-[6px] border border-[#E2E2E2] p-0.5 text-[14px] font-medium">
-        <span className="px-3 py-[7px]">Day</span>
-        <span className="rounded-[4px] bg-[#141414] px-3 py-[7px] text-white">Week</span>
-        <span className="px-3 py-[7px]">Month</span>
+        <span className="px-3 py-[7px]">{text.views.day}</span>
+        <span className="rounded-[4px] bg-[#141414] px-3 py-[7px] text-white">{text.views.week}</span>
+        <span className="px-3 py-[7px]">{text.views.month}</span>
       </div>
       <span className={control}>
         <Icon size={15} width={1.4}>
           <circle cx="8" cy="8" r="6.2" />
           <path d="M8 4.5V8l2.3 1.5" />
         </Icon>
-        Jump to today
+        {text.jumpToToday}
       </span>
       <span className="px-1 text-[18px]">‹</span>
       <span className={`${control} gap-2.5`}>
-        <b>Week {demoWeek.weekNumber}</b>
-        <span className="font-normal text-[#6B6B6B]">{demoWeek.range}</span>
+        <b>
+          {text.week} {demoWeek.weekNumber}
+        </b>
+        <span className="font-normal text-[#6B6B6B]">{range}</span>
       </span>
       <span className="px-1 text-[18px]">›</span>
       <span className={`${control} min-w-[170px] justify-between`}>
-        Calendar<span className="text-[#6B6B6B]">⌄</span>
+        {text.calendar}
+        <span className="text-[#6B6B6B]">⌄</span>
       </span>
       <span className="flex-1" />
       <span className={control}>
         <Icon size={15} width={1.4}>
           <path d="M2.5 4h11M4.5 8h7M6.5 12h3" />
         </Icon>
-        Filter
+        {text.filter}
       </span>
       <span className={control}>
         <Icon size={15} width={1.4}>
           <rect x="2" y="2.5" width="12" height="8.5" rx="1.2" />
           <path d="M6 14h4M8 11v3" />
         </Icon>
-        Display settings
+        {text.displaySettings}
       </span>
       <span className="flex size-[30px] items-center justify-center rounded-full border-[1.4px] border-[#141414] text-[14px] font-semibold">
         ?
       </span>
       <span className="flex h-[38px] items-center gap-2 whitespace-nowrap rounded-[6px] bg-[#E2531C] px-4 text-[14px] font-semibold text-white">
         <LockIcon stroke="#FFFFFF" size={14} />
-        Close lift
+        {text.closeLift}
       </span>
     </div>
   )
 }
 
-function Legend() {
+function Legend({text}: {text: CalendarText}) {
   return (
     <div className="flex flex-wrap items-center gap-[18px] border-b border-[#EAEAEA] px-4 py-2.5 text-[13px]">
-      <span className="text-[12px] tracking-[0.04em] text-[#6B6B6B]">BOOKING COLOURS</span>
+      <span className="text-[12px] tracking-[0.04em] text-[#6B6B6B]">{text.bookingColours}</span>
       <LegendItem color={sourceColor.admin} icon={<SourceIcon source="admin" />}>
-        Admin
+        {text.sources.admin}
       </LegendItem>
       <LegendItem color={sourceColor.online} icon={<SourceIcon source="online" />}>
-        Online
+        {text.sources.online}
       </LegendItem>
-      <LegendItem color={sourceColor.auto}>Auto-booking</LegendItem>
+      <LegendItem color={sourceColor.auto}>{text.sources.auto}</LegendItem>
       <span className="block h-[18px] w-px bg-[#E2E2E2]" />
-      <span className="text-[#6B6B6B]">Auto-booking status</span>
-      <span className="text-[#2F6FE0]">Sent</span>
-      <span className="text-[#2E9E5B]">Accepted</span>
-      <span className="text-[#D93A2B]">Declined</span>
+      <span className="text-[#6B6B6B]">{text.autoBookingStatus}</span>
+      <span className="text-[#2F6FE0]">{text.statuses.sent}</span>
+      <span className="text-[#2E9E5B]">{text.statuses.accepted}</span>
+      <span className="text-[#D93A2B]">{text.statuses.declined}</span>
     </div>
   )
 }

@@ -7,7 +7,6 @@ export type FormType = 'contact' | 'trial' | 'newsletter'
 
 export interface FormField {
   name: string
-  label: string
   type?: 'text' | 'email' | 'tel' | 'password' | 'textarea' | 'select'
   required?: boolean
   autoComplete?: string
@@ -19,29 +18,28 @@ export interface FormField {
 
 export const formFields: Record<FormType, FormField[]> = {
   contact: [
-    {name: 'name', label: 'Your name', required: true, autoComplete: 'name', maxLength: 200},
-    {name: 'email', label: 'Your e-mail', type: 'email', required: true, autoComplete: 'email', maxLength: 320},
-    {name: 'message', label: 'Message', type: 'textarea', required: true, maxLength: 5000},
+    {name: 'name', required: true, autoComplete: 'name', maxLength: 200},
+    {name: 'email', type: 'email', required: true, autoComplete: 'email', maxLength: 320},
+    {name: 'message', type: 'textarea', required: true, maxLength: 5000},
   ],
   trial: [
-    {name: 'company', label: 'Company name', required: true, wide: true, autoComplete: 'organization', maxLength: 200},
-    {name: 'orgNumber', label: 'Company registration number', maxLength: 40},
-    {name: 'phone', label: 'Phone number', type: 'tel', autoComplete: 'tel', maxLength: 40},
-    {name: 'address', label: 'Address', wide: true, autoComplete: 'street-address', maxLength: 200},
-    {name: 'zip', label: 'Zip code', autoComplete: 'postal-code', maxLength: 20},
-    {name: 'city', label: 'City', autoComplete: 'address-level2', maxLength: 100},
+    {name: 'company', required: true, wide: true, autoComplete: 'organization', maxLength: 200},
+    {name: 'orgNumber', maxLength: 40},
+    {name: 'phone', type: 'tel', autoComplete: 'tel', maxLength: 40},
+    {name: 'address', wide: true, autoComplete: 'street-address', maxLength: 200},
+    {name: 'zip', autoComplete: 'postal-code', maxLength: 20},
+    {name: 'city', autoComplete: 'address-level2', maxLength: 100},
     {
       name: 'country',
-      label: 'Country',
       type: 'select',
       wide: true,
       autoComplete: 'country-name',
       options: ['Sweden', 'Norway', 'Denmark', 'Finland', 'Other'],
     },
-    {name: 'email', label: 'E-mail', type: 'email', required: true, autoComplete: 'email', maxLength: 320},
-    {name: 'password', label: 'Password', type: 'password', autoComplete: 'new-password', maxLength: 200},
+    {name: 'email', type: 'email', required: true, autoComplete: 'email', maxLength: 320},
+    {name: 'password', type: 'password', autoComplete: 'new-password', maxLength: 200},
   ],
-  newsletter: [{name: 'email', label: 'Your e-mail', type: 'email', required: true, autoComplete: 'email', maxLength: 320}],
+  newsletter: [{name: 'email', type: 'email', required: true, autoComplete: 'email', maxLength: 320}],
 }
 
 /** Hidden field that people never fill in; bots often do. */

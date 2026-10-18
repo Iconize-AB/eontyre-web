@@ -14,6 +14,7 @@ export interface DirectoryCategory {
 
 interface Props {
   allLabel: string
+  filterLabel: string
   categories: DirectoryCategory[]
   /** Category of each card, in the same order as `cards`. */
   cardCategories: string[]
@@ -42,6 +43,7 @@ export function IntegrationDirectoryFallback(props: Props) {
 
 function DirectoryView({
   allLabel,
+  filterLabel,
   categories,
   cardCategories,
   cards,
@@ -63,7 +65,7 @@ function DirectoryView({
     <>
       {showFilter && categories.length > 1 && (
         <div className="mb-8 border-b border-hairline pb-6">
-          <FilterChips chips={chips} active={active} onChange={(value) => onSelect?.(value)} label="Filter by category" />
+          <FilterChips chips={chips} active={active} onChange={(value) => onSelect?.(value)} label={filterLabel} />
         </div>
       )}
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,290px),1fr))] gap-5">{visible}</ul>

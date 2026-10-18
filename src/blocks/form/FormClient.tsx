@@ -2,6 +2,7 @@
 
 import {useId, useState, type FormEvent, type ReactNode} from 'react'
 
+import {useDictionary, useLocale} from '@/i18n/LocaleProvider'
 import {formFields, HONEYPOT, type FormField, type FormType} from '@/lib/forms'
 
 interface Props {
@@ -21,6 +22,9 @@ const fieldClass =
 export function FormClient({formType, arrangement, submitLabel, successHeading, successBody, errorText, finePrint}: Props) {
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const id = useId()
+  const locale = useLocale()
+  const {forms: text} = useDictionary()
+  const labels: Record<string, string> = text.labels[formType]
   const fields = formFields[formType]
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -31,7 +35,7 @@ export function FormClient({formType, arrangement, submitLabel, successHeading, 
       const response = await fetch('/api/forms', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({...data, formType}),
+        body: JSON.stringify({...data, formType, locale}),
       })
       setStatus(response.ok ? 'sent' : 'error')
     } catch {
@@ -61,7 +65,7 @@ export function FormClient({formType, arrangement, submitLabel, successHeading, 
   const honeypot = (
     <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
       <label>
-        Leave this empty
+        {text.honeypot}
         <input name={HONEYPOT} tabIndex={-1} autoComplete="off" />
       </label>
     </div>
@@ -80,7 +84,7 @@ export function FormClient({formType, arrangement, submitLabel, successHeading, 
         {honeypot}
         <div className="flex flex-wrap gap-2.5">
           <label htmlFor={`${id}-${field.name}`} className="sr-only">
-            {field.label}
+            {labels[field.name]}
           </label>
           <input
             id={`${id}-${field.name}`}
@@ -88,7 +92,7 @@ export function FormClient({formType, arrangement, submitLabel, successHeading, 
             type={field.type ?? 'text'}
             required={field.required}
             autoComplete={field.autoComplete}
-            placeholder={field.label}
+            placeholder={labels[field.name]}
             className={`${fieldClass} flex-[1_1_240px] p-3.5`}
           />
           {submit}
@@ -107,7 +111,13 @@ export function FormClient({formType, arrangement, submitLabel, successHeading, 
     >
       {honeypot}
       {fields.map((field) => (
-        <Field key={field.name} field={field} id={`${id}-${field.name}`} wide={arrangement === 'columns' && field.wide} />
+        <Field
+          key={field.name}
+          field={field}
+          label={labels[field.name]}
+          id={`${id}-${field.name}`}
+          wide={arrangement === 'columns' && field.wide}
+        />
       ))}
       <div className={`mt-2 flex flex-col gap-3 ${arrangement === 'columns' ? 'sm:col-span-2' : ''}`}>
         {submit}
@@ -118,7 +128,8 @@ export function FormClient({formType, arrangement, submitLabel, successHeading, 
   )
 }
 
-function Field({field, id, wide}: {field: FormField; id: string; wide?: boolean}) {
+function Field({field, label, id, wide}: {field: FormField; label: string; id: string; wide?: boolean}) {
+  const {forms: text} = useDictionary()
   const common = {
     id,
     name: field.name,
@@ -131,14 +142,16 @@ function Field({field, id, wide}: {field: FormField; id: string; wide?: boolean}
   return (
     <div className={`flex flex-col gap-1.5 ${wide ? 'sm:col-span-2' : ''}`}>
       <label htmlFor={id} className="text-[14px] font-medium">
-        {field.label}
+        {label}
       </label>
       {field.type === 'textarea' ? (
         <textarea {...common} rows={5} className={`${fieldClass} resize-y`} />
       ) : field.type === 'select' ? (
         <select {...common} defaultValue={field.options?.[0]}>
           {field.options?.map((option) => (
-            <option key={option}>{option}</option>
+            <option key={option} value={option}>
+              {text.countries[option as keyof typeof text.countries] ?? option}
+            </option>
           ))}
         </select>
       ) : (

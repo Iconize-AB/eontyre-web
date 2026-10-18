@@ -4,6 +4,8 @@ import {Suspense} from 'react'
 import {SanityImage} from '@/components/SanityImage'
 import {Section} from '@/components/Section'
 import {SmartLink} from '@/components/SmartLink'
+import type {Dictionary} from '@/i18n/dictionaries'
+import {getDictionary} from '@/i18n/server'
 import type {BlockOf} from '@/sanity/content-types'
 import {integrationCategories} from '@/sanity/schemaTypes/categories'
 
@@ -13,16 +15,11 @@ import {IntegrationDirectory, IntegrationDirectoryFallback} from './IntegrationD
 type Block = BlockOf<'integrationDirectoryBlock'>
 type Card = NonNullable<NonNullable<Block['integrations']>[number]>
 
-const defaultLabels = {
-  all: 'All',
-  readMore: 'Read more',
-  available: 'Available',
-  comingSoon: 'Coming soon',
-  empty: 'No integrations to show yet.',
-}
-type Labels = typeof defaultLabels
+type Labels = {all: string; readMore: string; available: string; comingSoon: string; empty: string}
+type Category = keyof Dictionary['integrations']['categories']
 
-export function IntegrationDirectoryBlock({block}: {block: Block}) {
+export async function IntegrationDirectoryBlock({block}: {block: Block}) {
+  const dictionary = await getDictionary()
   const integrations = (block.integrations ?? []).filter((item): item is Card => Boolean(item))
   const used = new Set<string | null>(integrations.map((item) => stegaClean(item.category)))
   const chosen: string[] = (block.filterCategories ?? []).map((value) => stegaClean(value))
@@ -30,13 +27,19 @@ export function IntegrationDirectoryBlock({block}: {block: Block}) {
     chosen.length ? chosen.includes(category.value) : used.has(category.value),
   )
 
-  const labels = withLabels(defaultLabels, block.labels)
+  // Texts set on the block win; empty ones fall back to this language's defaults.
+  const {integrations: text} = dictionary
+  const labels: Labels = withLabels(
+    {all: text.all, readMore: text.readMore, available: text.available, comingSoon: text.comingSoon, empty: text.empty},
+    block.labels,
+  )
 
   const props = {
     allLabel: labels.all,
-    categories: categories.map(({value, title}) => ({value, label: title})),
+    filterLabel: text.filter,
+    categories: categories.map(({value}) => ({value, label: text.categories[value as Category]})),
     cardCategories: integrations.map((item) => stegaClean(item.category) ?? ''),
-    cards: integrations.map((item) => <IntegrationCard key={item._id} item={item} labels={labels} />),
+    cards: integrations.map((item) => <IntegrationCard key={item._id} item={item} labels={labels} dictionary={dictionary} />),
     showFilter: Boolean(block.showFilter),
   }
 
@@ -56,7 +59,7 @@ export function IntegrationDirectoryBlock({block}: {block: Block}) {
   )
 }
 
-function IntegrationCard({item, labels}: {item: Card; labels: Labels}) {
+function IntegrationCard({item, labels, dictionary}: {item: Card; labels: Labels; dictionary: Dictionary}) {
   const category = integrationCategories.find((c) => c.value === stegaClean(item.category))
   const comingSoon = stegaClean(item.status) === 'comingSoon'
   const developer = stegaClean(item.category) === 'developers'
@@ -78,7 +81,11 @@ function IntegrationCard({item, labels}: {item: Card; labels: Labels}) {
       </div>
       <div className="flex flex-col gap-1">
         <h3 className="text-[20px] font-bold tracking-[-0.01em]">{item.name}</h3>
-        {category && <span className="text-[14px] text-fg-subtle">{category.title}</span>}
+        {category && (
+          <span className="text-[14px] text-fg-subtle">
+            {dictionary.integrations.categories[category.value as Category]}
+          </span>
+        )}
       </div>
       {item.shortDescription && <p className="text-[15px] leading-[1.55] text-fg-muted">{item.shortDescription}</p>}
       {item.href && (

@@ -5,7 +5,7 @@ import {postCardFields} from '../blocks/newsList/query'
 import {imageFields, navItemFields, richTextFields} from './fragments'
 
 export const SETTINGS_QUERY = defineQuery(`
-  *[_id == "siteSettings"][0]{
+  *[_type == "siteSettings" && language == $language][0]{
     siteTitle,
     seo{title, description, image},
     logo{${imageFields}},
@@ -22,26 +22,26 @@ export const SETTINGS_QUERY = defineQuery(`
 
 /** An empty `$slug` returns the home page chosen in Site settings. */
 export const PAGE_QUERY = defineQuery(`
-  *[_type == "page" && select(
-    $slug == "" => _id == *[_id == "siteSettings"][0].homePage._ref,
+  *[_type == "page" && language == $language && select(
+    $slug == "" => _id == *[_type == "siteSettings" && language == $language][0].homePage._ref,
     slug.current == $slug
   )][0]{
     _id,
     _type,
     title,
     "slug": slug.current,
-    "isHome": _id == *[_id == "siteSettings"][0].homePage._ref,
+    "isHome": _id == *[_type == "siteSettings" && language == $language][0].homePage._ref,
     seo{title, description, image, noIndex},
     ${blocksProjection}
   }
 `)
 
 export const PAGE_SLUGS_QUERY = defineQuery(`
-  *[_type == "page" && defined(slug.current)]{"slug": slug.current}
+  *[_type == "page" && language == $language && defined(slug.current)]{"slug": slug.current}
 `)
 
 export const INTEGRATION_QUERY = defineQuery(`
-  *[_type == "integration" && slug.current == $slug && hasDetailPage == true][0]{
+  *[_type == "integration" && language == $language && slug.current == $slug && hasDetailPage == true][0]{
     _id,
     _type,
     name,
@@ -53,11 +53,11 @@ export const INTEGRATION_QUERY = defineQuery(`
 `)
 
 export const INTEGRATION_SLUGS_QUERY = defineQuery(`
-  *[_type == "integration" && hasDetailPage == true && defined(slug.current)]{"slug": slug.current}
+  *[_type == "integration" && language == $language && hasDetailPage == true && defined(slug.current)]{"slug": slug.current}
 `)
 
 export const POST_QUERY = defineQuery(`
-  *[_type == "post" && slug.current == $slug][0]{
+  *[_type == "post" && language == $language && slug.current == $slug][0]{
     ${postCardFields},
     _type,
     body[]{
@@ -65,11 +65,11 @@ export const POST_QUERY = defineQuery(`
       _type == "image" => {_key, _type, caption, ${imageFields}}
     },
     seo{title, description, image, noIndex},
-    "related": *[_type == "post" && defined(slug.current) && slug.current != $slug]
+    "related": *[_type == "post" && language == $language && defined(slug.current) && slug.current != $slug]
       | order(publishedAt desc)[0...3]{${postCardFields}}
   }
 `)
 
 export const POST_SLUGS_QUERY = defineQuery(`
-  *[_type == "post" && defined(slug.current)]{"slug": slug.current}
+  *[_type == "post" && language == $language && defined(slug.current)]{"slug": slug.current}
 `)

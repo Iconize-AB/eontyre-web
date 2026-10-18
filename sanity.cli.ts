@@ -21,6 +21,7 @@ export default defineCliConfig({
       'process.env.NEXT_PUBLIC_SANITY_DATASET': JSON.stringify(dataset),
       'process.env.NEXT_PUBLIC_SANITY_API_VERSION': JSON.stringify(process.env.NEXT_PUBLIC_SANITY_API_VERSION ?? ''),
       'process.env.SANITY_STUDIO_PREVIEW_URL': JSON.stringify(previewUrl),
+      'process.env.NEXT_PUBLIC_LOCALE_DOMAINS': JSON.stringify(process.env.NEXT_PUBLIC_LOCALE_DOMAINS ?? ''),
     },
   }),
 })

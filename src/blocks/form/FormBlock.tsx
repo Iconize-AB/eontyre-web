@@ -3,6 +3,7 @@ import {stegaClean} from 'next-sanity'
 import {hasRichText, RichText} from '@/components/RichText'
 import {SanityImage} from '@/components/SanityImage'
 import {Section} from '@/components/Section'
+import {getDictionary} from '@/i18n/server'
 import {isFormType} from '@/lib/forms'
 import type {BlockOf} from '@/sanity/content-types'
 
@@ -10,7 +11,8 @@ import {FormClient} from './FormClient'
 
 type Block = BlockOf<'formBlock'>
 
-export function FormBlock({block, isFirst}: {block: Block; isFirst: boolean}) {
+export async function FormBlock({block, isFirst}: {block: Block; isFirst: boolean}) {
+  const dictionary = await getDictionary()
   const formType = stegaClean(block.formType)
   if (!isFormType(formType)) return null
 
@@ -25,7 +27,7 @@ export function FormBlock({block, isFirst}: {block: Block; isFirst: boolean}) {
       submitLabel={block.submitLabel ?? ''}
       successHeading={block.successHeading ?? ''}
       successBody={block.successBody}
-      errorText={block.errorText || 'Something went wrong. Please try again, or call us.'}
+      errorText={block.errorText || dictionary.forms.error}
       finePrint={hasRichText(block.finePrint) ? <RichText value={block.finePrint} size="base" className="!text-[13px]" /> : undefined}
     />
   )

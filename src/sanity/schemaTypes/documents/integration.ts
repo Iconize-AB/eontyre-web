@@ -5,6 +5,7 @@ import {defineArrayMember, defineField, defineType} from 'sanity'
 import {blockTypeNames} from '../../../blocks/schemas'
 import {integrationCategories} from '../categories'
 import {imageField} from '../fields'
+import {isUniqueInLanguage, languageField} from '../language'
 
 export const integration = defineType({
   name: 'integration',
@@ -18,6 +19,7 @@ export const integration = defineType({
     {name: 'seo', title: 'SEO'},
   ],
   fields: [
+    languageField,
     defineField({name: 'name', title: 'Name', type: 'string', group: 'card', validation: (rule) => rule.required()}),
     defineField({
       name: 'slug',
@@ -25,7 +27,7 @@ export const integration = defineType({
       type: 'slug',
       group: 'card',
       description: 'The detail page lives at /integrations/{slug}.',
-      options: {source: 'name', maxLength: 96},
+      options: {source: 'name', maxLength: 96, isUnique: isUniqueInLanguage},
       validation: (rule) => rule.required(),
     }),
     defineField({

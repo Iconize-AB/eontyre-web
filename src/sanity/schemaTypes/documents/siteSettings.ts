@@ -2,8 +2,10 @@ import {CogIcon} from '@sanity/icons/Cog'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
 import {imageField} from '../fields'
+import {languageField, sameLanguage} from '../language'
 
-export const SITE_SETTINGS_ID = 'siteSettings'
+/** One Site settings document per language: "siteSettings-sv", "siteSettings-en" … */
+export const siteSettingsId = (language: string) => `siteSettings-${language}`
 
 export const siteSettings = defineType({
   name: 'siteSettings',
@@ -16,6 +18,7 @@ export const siteSettings = defineType({
     {name: 'footer', title: 'Footer'},
   ],
   fields: [
+    languageField,
     defineField({
       name: 'siteTitle',
       title: 'Site title',
@@ -29,6 +32,7 @@ export const siteSettings = defineType({
       title: 'Home page',
       type: 'reference',
       to: [{type: 'page'}],
+      options: sameLanguage,
       group: 'general',
       description: 'The page shown at eontyre.com/.',
       validation: (rule) => rule.required(),

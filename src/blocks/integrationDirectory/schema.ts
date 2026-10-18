@@ -3,6 +3,7 @@ import {defineArrayMember, defineField, defineType} from 'sanity'
 
 import {integrationCategories} from '../../sanity/schemaTypes/categories'
 import {blockGroups, blockSettingsFields, labelsField} from '../../sanity/schemaTypes/fields'
+import {sameLanguage} from '../../sanity/schemaTypes/language'
 
 export const integrationDirectoryBlock = defineType({
   name: 'integrationDirectoryBlock',
@@ -18,7 +19,7 @@ export const integrationDirectoryBlock = defineType({
       type: 'array',
       group: 'content',
       description: 'Leave empty to show every integration, in the order set under Integrations.',
-      of: [defineArrayMember({type: 'reference', to: [{type: 'integration'}]})],
+      of: [defineArrayMember({type: 'reference', to: [{type: 'integration'}], options: sameLanguage})],
     }),
     defineField({
       name: 'showFilter',

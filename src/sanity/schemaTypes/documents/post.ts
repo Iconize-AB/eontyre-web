@@ -3,6 +3,7 @@ import {defineField, defineType} from 'sanity'
 
 import {postCategories} from '../categories'
 import {imageField} from '../fields'
+import {isUniqueInLanguage, languageField} from '../language'
 
 export const post = defineType({
   name: 'post',
@@ -14,6 +15,7 @@ export const post = defineType({
     {name: 'seo', title: 'SEO'},
   ],
   fields: [
+    languageField,
     defineField({name: 'title', title: 'Title', type: 'string', group: 'content', validation: (rule) => rule.required()}),
     defineField({
       name: 'slug',
@@ -21,7 +23,7 @@ export const post = defineType({
       type: 'slug',
       group: 'content',
       description: 'The post lives at /news/{slug}.',
-      options: {source: 'title', maxLength: 96},
+      options: {source: 'title', maxLength: 96, isUnique: isUniqueInLanguage},
       validation: (rule) => rule.required(),
     }),
     defineField({
