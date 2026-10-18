@@ -10,6 +10,13 @@ export const textMediaBlock = defineType({
   icon: BlockContentIcon,
   groups: blockGroups,
   fields: [
+    defineField({
+      name: 'eyebrow',
+      title: 'Eyebrow',
+      type: 'string',
+      group: 'content',
+      description: 'Optional small orange label above the heading, e.g. "Tip".',
+    }),
     defineField({name: 'heading', title: 'Heading', type: 'string', group: 'content', validation: (rule) => rule.required()}),
     richTextField(),
     defineField({

@@ -10,6 +10,16 @@ export const featureGridVariants = [
   {title: 'Cards', value: 'cards'},
 ]
 
+const layouts = [
+  {title: 'Full width', value: 'full'},
+  {title: 'Split (text left, items right)', value: 'split'},
+]
+
+const sources = [
+  {title: 'Written here', value: 'manual'},
+  {title: 'Related items of this add-on or integration', value: 'related'},
+]
+
 export const featureGridBlock = defineType({
   name: 'featureGridBlock',
   title: 'Feature grid',
@@ -27,11 +37,25 @@ export const featureGridBlock = defineType({
       description: 'E.g. "See all integrations", shown right-aligned.',
     }),
     defineField({
+      name: 'source',
+      title: 'Items come from',
+      type: 'string',
+      group: 'content',
+      description:
+        '"Related items" shows the "Works well with" list of the add-on or integration this block sits on, as cards.',
+      options: {list: sources, layout: 'radio'},
+      initialValue: 'manual',
+    }),
+    defineField({
       name: 'items',
       title: 'Items',
       type: 'array',
       group: 'content',
-      validation: (rule) => rule.min(1).max(12),
+      hidden: ({parent}) => parent?.source === 'related',
+      validation: (rule) =>
+        rule.max(12).custom((value, {parent}) =>
+          (parent as {source?: string})?.source !== 'related' && !value?.length ? 'Add at least one item' : true,
+        ),
       of: [
         defineArrayMember({
           type: 'object',
@@ -50,6 +74,14 @@ export const featureGridBlock = defineType({
           preview: {select: {title: 'title', media: 'image'}},
         }),
       ],
+    }),
+    defineField({
+      name: 'layout',
+      title: 'Layout',
+      type: 'string',
+      group: 'style',
+      options: {list: layouts, layout: 'radio'},
+      initialValue: 'full',
     }),
     defineField({
       name: 'variant',

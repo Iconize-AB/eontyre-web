@@ -210,6 +210,18 @@
     color: #8a837b;
   }
 
+  /*
+   * Swedish, Norwegian and Finnish have long compound words ("dubbelarbete"). The language is
+   * set on <html>, so the browser can hyphenate headings; a word that still doesn't fit breaks
+   * instead of running under the next column.
+   */
+  h1,
+  h2,
+  h3 {
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+
   /* Anchor links land below the header. */
   [id] {
     scroll-margin-top: 80px;

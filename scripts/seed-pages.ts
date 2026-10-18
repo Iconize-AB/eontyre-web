@@ -7,6 +7,8 @@ import {
   anchorNav,
   button,
   ctaBanner,
+  faqBlock,
+  faqItems,
   featureGrid,
   featureRows,
   form,
@@ -526,6 +528,18 @@ export function buildPages(img: Images) {
 }
 
 /** The 14 integrations from the Integrations reference, in directory order. */
+/** The directory's filter groups, in order. `accentTile` paints the cards' logo tile orange. */
+export const integrationCategoryData: {id: string; title: string; accentTile?: boolean}[] = [
+  {id: 'addons', title: 'Add-ons'},
+  {id: 'accounting', title: 'Accounting'},
+  {id: 'payments', title: 'Payments'},
+  {id: 'workshop', title: 'Workshop'},
+  {id: 'storage', title: 'Storage'},
+  {id: 'suppliers', title: 'Suppliers'},
+  {id: 'salesChannels', title: 'Sales channels'},
+  {id: 'developers', title: 'Developers', accentTile: true},
+]
+
 export const integrationData: {
   id: string
   name: string
@@ -533,22 +547,30 @@ export const integrationData: {
   category: string
   shortDescription: string
   status: 'available' | 'comingSoon'
+  /** Add-on: built into Eontyre. Integration: connects to another company's system. */
+  kind: 'addon' | 'integration'
+  /** Has its own page at /integrations/{id}. */
+  detail?: 'pos' | 'sms'
   linkOverride?: string
 }[] = [
-  {id: 'fortnox', name: 'Fortnox', shortName: 'Fx', category: 'accounting', status: 'available', shortDescription: 'Customers, invoices and receipts sync to Fortnox automatically. Saves time and reduces errors.'},
-  {id: 'unit4', name: 'Unit4', shortName: 'U4', category: 'accounting', status: 'available', shortDescription: 'Receipts, invoices, stock and sales data are transferred to Unit4 in real time.'},
-  {id: 'integrated-point-of-sale', name: 'Integrated point of sale', shortName: 'POS', category: 'payments', status: 'available', shortDescription: 'Take payment inside Eontyre. Approved by the Swedish Tax Agency, and the wheel change closes when the customer pays.'},
-  {id: 'check-in', name: 'Check-in', shortName: 'Ci', category: 'workshop', status: 'available', shortDescription: 'Customers check in on a tablet at reception. Name, mobile number and e-mail are collected correctly every time.'},
-  {id: 'vecheck', name: 'Vecheck', shortName: 'Vc', category: 'workshop', status: 'available', shortDescription: 'Inspect the car at drop-off and send photos, reports and repair offers straight to the customer’s phone.'},
-  {id: 'tread-scanning', name: 'Tread scanning', shortName: 'Sc', category: 'workshop', status: 'available', shortDescription: 'Automatic scans give exact tread data and ready-made sales recommendations.'},
-  {id: 'sales-tool', name: 'Sales tool', shortName: 'St', category: 'workshop', status: 'available', shortDescription: 'Every employee can find recommended products and prices on a tablet or computer.'},
-  {id: 'storage-adapters', name: 'Storage adapters', shortName: 'Sa', category: 'storage', status: 'available', shortDescription: 'Enter the dimensions of shelves, cages, containers or racks and Eontyre calculates the most space-efficient storage.'},
-  {id: 'storage-systems', name: 'Storage systems', shortName: 'Ss', category: 'storage', status: 'available', shortDescription: 'Works with SSI Schäfer racks, containers, pallets or stacks of tyres on the floor.'},
-  {id: 'european-tyre-suppliers', name: 'European tyre suppliers', shortName: 'TS', category: 'suppliers', status: 'available', shortDescription: 'Live stock, prices and ordering from tyre suppliers all over Europe.'},
-  {id: 'eontyre-partner-garages', name: 'Eontyre partner garages', shortName: 'PG', category: 'suppliers', status: 'available', shortDescription: 'Use other Eontyre garages as suppliers to complement your own stock.'},
-  {id: 'webshop', name: 'Webshop', shortName: 'Ws', category: 'salesChannels', status: 'available', shortDescription: 'A tyre webshop with registration number search, live stock and fitting bookings.', linkOverride: '/webshop'},
-  {id: 'premium-consumer-shop', name: 'Premium consumer shop', shortName: 'PS', category: 'salesChannels', status: 'comingSoon', shortDescription: 'A consumer tyre shop with everything extra.'},
-  {id: 'eontyre-api', name: 'Eontyre API', shortName: 'API', category: 'developers', status: 'available', shortDescription: 'Automate flows and connect your own systems, apps and partners.', linkOverride: '/api'},
+  {id: 'fortnox', name: 'Fortnox', shortName: 'Fx', category: 'accounting', kind: 'integration', status: 'available', shortDescription: 'Customers, invoices and receipts sync to Fortnox automatically. Saves time and reduces errors.'},
+  {id: 'unit4', name: 'Unit4', shortName: 'U4', category: 'accounting', kind: 'integration', status: 'available', shortDescription: 'Receipts, invoices, stock and sales data are transferred to Unit4 in real time.'},
+  {id: 'integrated-point-of-sale', name: 'Integrated point of sale', shortName: 'POS', category: 'payments', kind: 'integration', detail: 'pos', status: 'available', shortDescription: 'Take payment inside Eontyre. Approved by the Swedish Tax Agency, and the wheel change closes when the customer pays.'},
+  {id: 'sms-payment', name: 'SMS payment', shortName: 'SMS', category: 'addons', kind: 'addon', detail: 'sms', status: 'available', shortDescription: 'Send a payment link by SMS. The customer pays by card, Swish, invoice or in instalments.'},
+  {id: 'auto-booking', name: 'Auto-booking', shortName: 'AB', category: 'addons', kind: 'addon', status: 'available', shortDescription: 'Book all your storage customers before the season by SMS, e-mail or letter. Book 1,000 customers in 10 minutes.'},
+  {id: 'quote-by-sms', name: 'Quote by SMS', shortName: 'Q', category: 'addons', kind: 'addon', status: 'available', shortDescription: 'Send a package price for complete wheels, fitted on the car, to the customer’s phone in under 60 seconds.'},
+  {id: 'delivery-notifications', name: 'Delivery notifications', shortName: 'DN', category: 'addons', kind: 'addon', status: 'available', shortDescription: 'When you receive the tyres, Eontyre lets the customer know.'},
+  {id: 'check-in', name: 'Check-in', shortName: 'Ci', category: 'workshop', kind: 'integration', status: 'available', shortDescription: 'Customers check in on a tablet at reception. Name, mobile number and e-mail are collected correctly every time.'},
+  {id: 'vecheck', name: 'Vecheck', shortName: 'Vc', category: 'workshop', kind: 'integration', status: 'available', shortDescription: 'Inspect the car at drop-off and send photos, reports and repair offers straight to the customer’s phone.'},
+  {id: 'tread-scanning', name: 'Tread scanning', shortName: 'Sc', category: 'workshop', kind: 'integration', status: 'available', shortDescription: 'Automatic scans give exact tread data and ready-made sales recommendations.'},
+  {id: 'sales-tool', name: 'Sales tool', shortName: 'St', category: 'workshop', kind: 'integration', status: 'available', shortDescription: 'Every employee can find recommended products and prices on a tablet or computer.'},
+  {id: 'storage-adapters', name: 'Storage adapters', shortName: 'Sa', category: 'storage', kind: 'integration', status: 'available', shortDescription: 'Enter the dimensions of shelves, cages, containers or racks and Eontyre calculates the most space-efficient storage.'},
+  {id: 'storage-systems', name: 'Storage systems', shortName: 'Ss', category: 'storage', kind: 'integration', status: 'available', shortDescription: 'Works with SSI Schäfer racks, containers, pallets or stacks of tyres on the floor.'},
+  {id: 'european-tyre-suppliers', name: 'European tyre suppliers', shortName: 'TS', category: 'suppliers', kind: 'integration', status: 'available', shortDescription: 'Live stock, prices and ordering from tyre suppliers all over Europe.'},
+  {id: 'eontyre-partner-garages', name: 'Eontyre partner garages', shortName: 'PG', category: 'suppliers', kind: 'integration', status: 'available', shortDescription: 'Use other Eontyre garages as suppliers to complement your own stock.'},
+  {id: 'webshop', name: 'Webshop', shortName: 'Ws', category: 'salesChannels', kind: 'integration', status: 'available', shortDescription: 'A tyre webshop with registration number search, live stock and fitting bookings.', linkOverride: '/webshop'},
+  {id: 'premium-consumer-shop', name: 'Premium consumer shop', shortName: 'PS', category: 'salesChannels', kind: 'integration', status: 'comingSoon', shortDescription: 'A consumer tyre shop with everything extra.'},
+  {id: 'eontyre-api', name: 'Eontyre API', shortName: 'API', category: 'developers', kind: 'integration', status: 'available', shortDescription: 'Automate flows and connect your own systems, apps and partners.', linkOverride: '/api'},
 ]
 
 /** Detail page blocks for the integrated point of sale (POS reference). */
@@ -594,6 +616,102 @@ export function posBlocks(img: Images) {
     ctaBanner({
       heading: 'Get the point of sale before the season starts',
       buttons: [button('Contact sales', '/about#contact')],
+      style: 'accent',
+    }),
+  ]
+}
+
+/** Questions and answers of the SMS payment add-on, word for word from "SMS Payment B.dc.html". */
+export const smsFaq = faqItems([
+  [
+    'How do I record this in the books?',
+    'Every payout comes with a settlement report you can use for bookkeeping. The reports are always available in the web admin and show each purchase with amounts and fees. With large volumes we can generate the reports as a file you import into your business system.',
+  ],
+  [
+    'How long does it take to set up?',
+    'We send an agreement that you sign digitally. Once it is approved, the connection is activated in Eontyre. This normally takes 3–5 working days.',
+  ],
+  ['Can I still use my existing till?', 'Yes. You get a new payment button.'],
+  ['Can I see in Eontyre when the customer has paid?', 'Yes. A green house shows when the payment is approved.'],
+])
+
+/** Detail page blocks for SMS payment (reference: reference/site/SMS Payment B.dc.html). */
+export function smsPaymentBlocks(img: Images) {
+  return [
+    pageHero({
+      eyebrow: 'Add-on · Payments',
+      heading: 'Let the customer pay on their phone',
+      body: pt(
+        'SMS payment is built into Eontyre. Send a payment link by SMS and the customer pays by card, Swish, invoice or in instalments, without coming to the counter.',
+      ),
+      buttons: [button('Order SMS payment', '/about#contact'), button('Get a call', '/about#contact', 'outline')],
+      media: 'image',
+      image: image(img.carDust, 'Car parked outside at sunset'),
+    }),
+    featureGrid({
+      heading: 'How it works',
+      variant: 'numbered',
+      items: [
+        {
+          title: 'Send the payment by SMS',
+          body: pt('From the order in Eontyre, with a new payment button next to your existing till.'),
+        },
+        {
+          title: 'The customer chooses how to pay',
+          body: pt('Waiting outside or miles away, they pay in their phone when it suits them.'),
+        },
+        {
+          title: 'You see it in Eontyre',
+          body: pt('A green house shows on the order as soon as the payment is approved.'),
+        },
+      ],
+    }),
+    featureGrid(
+      {
+        heading: 'Four ways to pay',
+        body: pt(
+          'With tyre prices going up, customers can spread the cost at their own pace, and you get paid in full at the next payout.',
+        ),
+        variant: 'topRule',
+        layout: 'split',
+        items: [
+          {
+            title: 'Card',
+            body: pt('The customer fills in their details and pays by card. Safe for the customer and simple for you.'),
+          },
+          {title: 'Swish', body: pt("Sweden's simplest payment method, integrated in Eontyre.")},
+          {
+            title: 'Invoice',
+            body: pt('The credit check and invoice are handled by the customer, without you being involved.'),
+          },
+          {
+            title: 'Part payment',
+            body: pt('The customer chooses their own pace. You get your money at the next payout.'),
+          },
+        ],
+      },
+      {background: 'surface'},
+    ),
+    textMedia({
+      eyebrow: 'Tip',
+      heading: 'Collect mobile numbers with Check-in',
+      body: pt(
+        "SMS payment needs the customer's mobile number. With Check-in on a tablet at reception, you don't have to ask for it. All you need is a tablet and a stand.",
+      ),
+      image: image(img.counter, 'Customer at a tyre shop reception'),
+      imagePosition: 'left',
+      list: [
+        'Saves time at reception',
+        'Collects mobile numbers and e-mail addresses',
+        'No misspelled names',
+        'Builds your customer database',
+      ],
+      listStyle: 'plain',
+    }),
+    faqBlock({heading: 'Questions and answers', source: 'document'}, {background: 'surface'}),
+    ctaBanner({
+      heading: 'Get started with smoother payments',
+      buttons: [button('Order SMS payment', '/about#contact'), button('Get a call', '/about#contact', 'outline')],
       style: 'accent',
     }),
   ]

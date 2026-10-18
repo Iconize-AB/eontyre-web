@@ -1,5 +1,6 @@
 import {anchorNavBlock} from './anchorNav/schema'
 import {ctaBannerBlock} from './ctaBanner/schema'
+import {faqBlock} from './faq/schema'
 import {featureGridBlock} from './featureGrid/schema'
 import {featureRowsBlock} from './featureRows/schema'
 import {formBlock} from './form/schema'
@@ -39,6 +40,7 @@ export const blockSchemas = [
   integrationDirectoryBlock,
   newsListBlock,
   // Endings
+  faqBlock,
   formBlock,
   ctaBannerBlock,
 ]

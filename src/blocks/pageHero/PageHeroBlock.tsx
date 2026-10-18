@@ -5,20 +5,24 @@ import {Button} from '@/components/Button'
 import {hasRichText, RichText} from '@/components/RichText'
 import {SanityImage} from '@/components/SanityImage'
 import {Eyebrow, Section} from '@/components/Section'
+import type {BlocksContext} from '@/blocks'
 import type {BlockOf} from '@/sanity/content-types'
 
 type Block = BlockOf<'pageHeroBlock'>
 
-export function PageHeroBlock({block, isFirst}: {block: Block; isFirst: boolean}) {
+export function PageHeroBlock({block, isFirst, context}: {block: Block; isFirst: boolean; context?: BlocksContext}) {
+  // The eyebrow typed on the block wins; pages such as add-ons compute a default.
+  const withEyebrow = (block.eyebrow ? block : {...block, eyebrow: context?.eyebrow ?? null}) as Block
+
   switch (stegaClean(block.media)) {
     case 'image':
-      return <ImageHero block={block} isFirst={isFirst} />
+      return <ImageHero block={withEyebrow} isFirst={isFirst} />
     case 'imageTop':
-      return <ImageTopHero block={block} isFirst={isFirst} />
+      return <ImageTopHero block={withEyebrow} isFirst={isFirst} />
     case 'code':
-      return <CodeHero block={block} />
+      return <CodeHero block={withEyebrow} />
     default:
-      return <TextHero block={block} />
+      return <TextHero block={withEyebrow} />
   }
 }
 
@@ -40,8 +44,9 @@ function Actions({block}: {block: Block}) {
     <>
       {buttons.length > 0 && (
         <div className="mt-9 flex flex-wrap gap-3">
-          {buttons.map((button) => (
-            <Button key={button._key} button={button} />
+          {/* The second button is always an outline pill. */}
+          {buttons.map((button, index) => (
+            <Button key={button._key} button={index === 1 ? {...button, variant: 'outline'} : button} />
           ))}
         </div>
       )}

@@ -138,7 +138,9 @@ export const anchorNav = (items: [label: string, anchorId: string][]) => ({
   _key: key(),
   _type: 'anchorNavBlock',
   items: items.map(([label, anchorId]) => ({_key: key(), _type: 'anchorNavItem', label, anchorId})),
-  ...settings(),
+  // This block has no "space above" setting.
+  theme: 'dark',
+  background: 'default',
 })
 
 export const productScreen = (
@@ -148,6 +150,7 @@ export const productScreen = (
 
 export const textMedia = (
   fields: {
+    eyebrow?: string
     heading: string
     body: ReturnType<typeof pt>
     image: ReturnType<typeof image>
@@ -164,6 +167,7 @@ export const featureGrid = (
     body?: ReturnType<typeof pt>
     headerLink?: ReturnType<typeof navItem>
     variant: 'topRule' | 'numbered' | 'steps' | 'cards'
+    layout?: 'full' | 'split'
     items: {title: string; body?: ReturnType<typeof pt>; link?: string}[]
   },
   options?: Settings,
@@ -174,6 +178,8 @@ export const featureGrid = (
   body: fields.body,
   headerLink: fields.headerLink && {...fields.headerLink, _key: undefined},
   variant: fields.variant,
+  layout: fields.layout ?? 'full',
+  source: 'manual',
   items: fields.items.map((item) => ({
     _key: key(),
     _type: 'featureGridItem',
@@ -183,6 +189,15 @@ export const featureGrid = (
   })),
   ...settings(options),
 })
+
+/** Questions for an add-on or integration document, or for a FAQ block that writes its own. */
+export const faqItems = (questions: [question: string, answer: string][]) =>
+  questions.map(([question, answer]) => ({_key: key(), _type: 'faqItem', question, answer: pt(answer)}))
+
+export const faqBlock = (
+  fields: {heading?: string; source: 'document' | 'custom'; items?: ReturnType<typeof faqItems>},
+  options?: Settings,
+) => ({_key: key(), _type: 'faqBlock', openFirst: true, ...fields, ...settings(options)})
 
 export const linkList = (
   fields: {

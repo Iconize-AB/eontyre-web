@@ -11,9 +11,10 @@ import {apiVersion, dataset, projectId, studioUrl} from './src/sanity/env'
 import {resolve} from './src/sanity/presentation'
 import {schemaTypes} from './src/sanity/schemaTypes'
 import {SINGLETON_TYPES, structure} from './src/sanity/structure'
+import {integrationPageTemplates} from './src/sanity/templates'
 
 /** Document types that exist once per language. */
-const translatedTypes = ['page', 'integration', 'post', 'siteSettings']
+const translatedTypes = ['page', 'integration', 'integrationCategory', 'post', 'siteSettings']
 
 export default defineConfig({
   name: 'default',
@@ -24,7 +25,11 @@ export default defineConfig({
   schema: {
     types: schemaTypes,
     // Singletons can't be created from the "New document" menu.
-    templates: (templates) => templates.filter(({schemaType}) => !SINGLETON_TYPES.has(schemaType)),
+    // Add-on and integration pages start from a pre-filled template (src/sanity/templates.ts).
+    templates: (templates) => [
+      ...templates.filter(({schemaType}) => !SINGLETON_TYPES.has(schemaType)),
+      ...integrationPageTemplates,
+    ],
   },
   document: {
     actions: (actions, {schemaType}) =>

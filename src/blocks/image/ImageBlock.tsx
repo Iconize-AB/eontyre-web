@@ -17,7 +17,8 @@ export function ImageBlock({block}: {block: BlockOf<'imageBlock'>}) {
   return (
     <Section settings={block} padded={false} className={stegaClean(block.paddingTop) === 'none' ? '' : 'block-pt'}>
       <div className="container-wide">
-        <div className={`relative min-h-[280px] overflow-hidden bg-surface ${aspect}`}>
+        {/* w-full: otherwise the minimum height turns into a minimum width through the aspect ratio. */}
+        <div className={`relative w-full min-h-[280px] overflow-hidden bg-surface ${aspect}`}>
           <SanityImage image={block.image} sizes="(min-width: 1360px) 1280px, 100vw" />
         </div>
       </div>

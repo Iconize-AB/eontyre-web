@@ -41,6 +41,16 @@ The site is published in Swedish (`sv`), English (`en`), Norwegian Bokmål (`nb`
 - **Site settings** (`siteSettings`, singleton): logo, header navigation and buttons, footer columns, contact details and legal line.
 - **Integration** (`integration`): used by the logo grid now and by the integrations page later.
 
+## Add-ons and integrations
+
+The **Add-ons and integrations** documents (type `integration`) are the cards in the directory at `/integrations`, and each one can have its own page at `/integrations/{slug}`.
+
+- **Kind:** *Add-on* is built into Eontyre; *Integration* connects to another company's system. The kind sets the default hero eyebrow ("Add-on · Payments" or "Payments") and where the breadcrumb leads (`/integrations?category=addons` for add-ons). Type an eyebrow on the page hero block to override it.
+- **New page from a template:** in the Studio's *New document* menu, choose *Add-on page (language)* or *Integration page (language)*. It starts with the recommended blocks, empty: page hero, "How it works" (numbered), a split top-rule grid, text and image, questions and answers, and an orange banner. Remove, reorder or add any block.
+- **Questions and answers:** write them on the document, and a *Questions and answers* block set to "From this page" shows them (and outputs FAQPage structured data). On other pages, set the block to "Written here".
+- **Works well with:** pick up to three related add-ons or integrations on the document, then add a *Feature grid* block set to "Related items".
+- `npm run seed -- --only-new` adds documents that are missing without changing anything that exists. The SMS payment page is the reference example.
+
 ## Adding a block
 
 Each block lives in `src/blocks/<name>/`:

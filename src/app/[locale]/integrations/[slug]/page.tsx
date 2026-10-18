@@ -1,12 +1,14 @@
 import type {Metadata} from 'next'
 import {draftMode} from 'next/headers'
 import {notFound} from 'next/navigation'
+import {stegaClean} from 'next-sanity'
 import {locale as localeParam} from 'next/root-params'
 import {Suspense} from 'react'
 
-import {Blocks} from '@/blocks'
+import {Blocks, type BlocksContext} from '@/blocks'
 import {Breadcrumb} from '@/components/Breadcrumb'
 import {isLocale, type Locale} from '@/i18n/config'
+import {getDictionaryFor} from '@/i18n/dictionaries'
 import type {PageBlock} from '@/sanity/content-types'
 import {cachedSanity, getDraftFetchOptions, publishedFetchOptions, type FetchOptions} from '@/sanity/live'
 import {buildMetadata} from '@/sanity/metadata'
@@ -72,11 +74,24 @@ async function IntegrationContent({locale, slug, ...options}: {locale: Locale; s
   })
   if (!integration) notFound()
 
+  const kind = stegaClean(integration.kind)
+  const category = stegaClean(integration.category)
+
+  // Default hero eyebrow: "Add-on · Payments" for add-ons, "Payments" for integrations.
+  // The add-ons category is the add-on itself, so it reads just "Add-on".
+  const {integrations: text} = getDictionaryFor(locale)
+  const categoryLabel = stegaClean(integration.categoryTitle) || undefined
+  const eyebrow =
+    kind === 'addon'
+      ? [text.addOn, category === 'addons' ? undefined : categoryLabel].filter(Boolean).join(' · ')
+      : categoryLabel
+  const context: BlocksContext = {eyebrow}
+
   return (
     <>
-      <Breadcrumb section="integrations" current={integration.name} />
+      <Breadcrumb section="integrations" current={integration.name} category={kind === 'addon' ? category : undefined} />
       {/* Same page-builder projection as pages, so the block types line up. */}
-      <Blocks blocks={integration.blocks as PageBlock[] | null} />
+      <Blocks blocks={integration.blocks as PageBlock[] | null} context={context} />
     </>
   )
 }

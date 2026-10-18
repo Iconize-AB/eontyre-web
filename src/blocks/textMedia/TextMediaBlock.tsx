@@ -2,7 +2,7 @@ import {stegaClean} from 'next-sanity'
 
 import {RichText} from '@/components/RichText'
 import {SanityImage} from '@/components/SanityImage'
-import {Section} from '@/components/Section'
+import {Eyebrow, Section} from '@/components/Section'
 import {SmartLink} from '@/components/SmartLink'
 import type {BlockOf} from '@/sanity/content-types'
 
@@ -23,7 +23,16 @@ export function TextMediaBlock({block}: {block: BlockOf<'textMediaBlock'>}) {
       <div className="container-wide grid grid-cols-[repeat(auto-fit,minmax(min(100%,440px),1fr))] items-center gap-x-16 gap-y-12">
         {imageLeft && image}
         <div>
-          <h2 className="type-block-h2 mb-5">{block.heading}</h2>
+          <Eyebrow className="mb-3">{block.eyebrow}</Eyebrow>
+          <h2
+            className={
+              block.eyebrow
+                ? 'mb-4 font-display text-[clamp(28px,3vw,40px)] leading-[1.05] font-extrabold tracking-[-0.01em] uppercase [font-stretch:115%]'
+                : 'type-block-h2 mb-5'
+            }
+          >
+            {block.heading}
+          </h2>
           <RichText value={block.body} className="max-w-[540px]" />
 
           {list.length > 0 && (
@@ -35,7 +44,7 @@ export function TextMediaBlock({block}: {block: BlockOf<'textMediaBlock'>}) {
                     <span>{item}</span>
                   </li>
                 ) : (
-                  <li key={index} className="border-t border-hairline py-3">
+                  <li key={index} className="border-t border-hairline py-3.5">
                     {item}
                   </li>
                 ),

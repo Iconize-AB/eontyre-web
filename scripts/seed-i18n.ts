@@ -12,7 +12,7 @@ export type Lang = 'sv' | 'en' | 'nb' | 'fi'
 export const LANGS: Lang[] = ['sv', 'en', 'nb', 'fi']
 
 /** Document types that exist once per language and carry a `language` field. */
-const TRANSLATED_TYPES = new Set(['page', 'integration', 'post', 'siteSettings'])
+const TRANSLATED_TYPES = new Set(['page', 'integration', 'integrationCategory', 'post', 'siteSettings'])
 
 /** Fields whose text is visible copy. Everything else (ids, urls, enums, code) is left alone. */
 const TEXT_KEYS = new Set([
@@ -29,6 +29,7 @@ const TEXT_KEYS = new Set([
   'list',
   'name',
   'note',
+  'question',
   'shortDescription',
   'submitLabel',
   'successBody',

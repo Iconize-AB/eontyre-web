@@ -1,5 +1,6 @@
 import {anchorNavBlockFields} from './anchorNav/query'
 import {ctaBannerBlockFields} from './ctaBanner/query'
+import {faqBlockFields} from './faq/query'
 import {featureGridBlockFields} from './featureGrid/query'
 import {featureRowsBlockFields} from './featureRows/query'
 import {formBlockFields} from './form/query'
@@ -33,6 +34,7 @@ export const blocksProjection = /* groq */ `
     ${logoGridBlockFields},
     ${integrationDirectoryBlockFields},
     ${newsListBlockFields},
+    ${faqBlockFields},
     ${formBlockFields},
     ${ctaBannerBlockFields}
   }

@@ -7,7 +7,6 @@ import {SmartLink} from '@/components/SmartLink'
 import type {Dictionary} from '@/i18n/dictionaries'
 import {getDictionary} from '@/i18n/server'
 import type {BlockOf} from '@/sanity/content-types'
-import {integrationCategories} from '@/sanity/schemaTypes/categories'
 
 import {withLabels} from '../labels'
 import {IntegrationDirectory, IntegrationDirectoryFallback} from './IntegrationDirectory'
@@ -16,16 +15,16 @@ type Block = BlockOf<'integrationDirectoryBlock'>
 type Card = NonNullable<NonNullable<Block['integrations']>[number]>
 
 type Labels = {all: string; readMore: string; available: string; comingSoon: string; empty: string}
-type Category = keyof Dictionary['integrations']['categories']
 
 export async function IntegrationDirectoryBlock({block}: {block: Block}) {
   const dictionary = await getDictionary()
   const integrations = (block.integrations ?? []).filter((item): item is Card => Boolean(item))
   const used = new Set<string | null>(integrations.map((item) => stegaClean(item.category)))
   const chosen: string[] = (block.filterCategories ?? []).map((value) => stegaClean(value))
-  const categories = integrationCategories.filter((category) =>
-    chosen.length ? chosen.includes(category.value) : used.has(category.value),
-  )
+  // Categories come from the Integration category documents, in their order.
+  const categories = (block.categories ?? [])
+    .map((category) => ({value: stegaClean(category.value) ?? '', label: category.title ?? ''}))
+    .filter((category) => (chosen.length ? chosen.includes(category.value) : used.has(category.value)))
 
   // Texts set on the block win; empty ones fall back to this language's defaults.
   const {integrations: text} = dictionary
@@ -37,9 +36,9 @@ export async function IntegrationDirectoryBlock({block}: {block: Block}) {
   const props = {
     allLabel: labels.all,
     filterLabel: text.filter,
-    categories: categories.map(({value}) => ({value, label: text.categories[value as Category]})),
+    categories,
     cardCategories: integrations.map((item) => stegaClean(item.category) ?? ''),
-    cards: integrations.map((item) => <IntegrationCard key={item._id} item={item} labels={labels} dictionary={dictionary} />),
+    cards: integrations.map((item) => <IntegrationCard key={item._id} item={item} labels={labels} />),
     showFilter: Boolean(block.showFilter),
   }
 
@@ -59,10 +58,9 @@ export async function IntegrationDirectoryBlock({block}: {block: Block}) {
   )
 }
 
-function IntegrationCard({item, labels, dictionary}: {item: Card; labels: Labels; dictionary: Dictionary}) {
-  const category = integrationCategories.find((c) => c.value === stegaClean(item.category))
+function IntegrationCard({item, labels}: {item: Card; labels: Labels}) {
   const comingSoon = stegaClean(item.status) === 'comingSoon'
-  const developer = stegaClean(item.category) === 'developers'
+  const accent = Boolean(item.accentTile)
 
   return (
     <li className="flex min-h-[250px] flex-col gap-3.5 border border-hairline p-6">
@@ -70,7 +68,7 @@ function IntegrationCard({item, labels, dictionary}: {item: Card; labels: Labels
         <span
           aria-hidden="true"
           className={`relative flex size-12 items-center justify-center text-[17px] font-bold ${
-            developer ? 'bg-accent text-on-accent' : 'bg-tile text-fg'
+            accent ? 'bg-accent text-on-accent' : 'bg-tile text-fg'
           }`}
         >
           {item.logo?.asset ? <SanityImage image={item.logo} sizes="48px" fit="contain" className="p-1.5" /> : item.shortName}
@@ -81,11 +79,7 @@ function IntegrationCard({item, labels, dictionary}: {item: Card; labels: Labels
       </div>
       <div className="flex flex-col gap-1">
         <h3 className="text-[20px] font-bold tracking-[-0.01em]">{item.name}</h3>
-        {category && (
-          <span className="text-[14px] text-fg-subtle">
-            {dictionary.integrations.categories[category.value as Category]}
-          </span>
-        )}
+        {item.categoryTitle && <span className="text-[14px] text-fg-subtle">{item.categoryTitle}</span>}
       </div>
       {item.shortDescription && <p className="text-[15px] leading-[1.55] text-fg-muted">{item.shortDescription}</p>}
       {item.href && (

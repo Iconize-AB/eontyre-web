@@ -2,6 +2,7 @@ import {blockSettings, imageFields, navItemFields, richTextFields} from '../../s
 
 export const textMediaBlockFields = /* groq */ `
   _type == "textMediaBlock" => {
+    eyebrow,
     heading,
     body[]{${richTextFields}},
     list,

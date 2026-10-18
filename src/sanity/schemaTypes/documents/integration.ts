@@ -3,13 +3,12 @@ import {orderRankField, orderRankOrdering} from '@sanity/orderable-document-list
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
 import {blockTypeNames} from '../../../blocks/schemas'
-import {integrationCategories} from '../categories'
 import {imageField} from '../fields'
-import {isUniqueInLanguage, languageField} from '../language'
+import {isUniqueInLanguage, languageField, sameLanguage} from '../language'
 
 export const integration = defineType({
   name: 'integration',
-  title: 'Integration',
+  title: 'Add-ons and integrations',
   type: 'document',
   icon: PlugIcon,
   orderings: [orderRankOrdering],
@@ -40,11 +39,28 @@ export const integration = defineType({
     }),
     imageField({name: 'logo', title: 'Logo', group: 'card'}),
     defineField({
-      name: 'category',
-      title: 'Category',
+      name: 'kind',
+      title: 'Kind',
       type: 'string',
       group: 'card',
-      options: {list: integrationCategories},
+      description: 'Add-on: a feature built into Eontyre that a garage switches on. Integration: connects Eontyre to another company’s system.',
+      options: {
+        list: [
+          {title: 'Add-on (built into Eontyre)', value: 'addon'},
+          {title: 'Integration (connects to another system)', value: 'integration'},
+        ],
+        layout: 'radio',
+      },
+      validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: 'category',
+      title: 'Category',
+      type: 'reference',
+      group: 'card',
+      to: [{type: 'integrationCategory'}],
+      options: sameLanguage,
+      description: 'The filter group on the directory. Categories are managed under Integration categories.',
       validation: (rule) => rule.required(),
     }),
     defineField({
@@ -86,6 +102,25 @@ export const integration = defineType({
       initialValue: false,
     }),
     defineField({
+      name: 'relatedItems',
+      title: 'Works well with',
+      type: 'array',
+      group: 'page',
+      description: 'Up to three other add-ons or integrations, shown by a Feature grid block set to "Related items".',
+      of: [defineArrayMember({type: 'reference', to: [{type: 'integration'}], options: sameLanguage})],
+      validation: (rule) => rule.max(3),
+      hidden: ({document}) => !document?.hasDetailPage,
+    }),
+    defineField({
+      name: 'faq',
+      title: 'Questions and answers',
+      type: 'array',
+      group: 'page',
+      description: 'Shown by a FAQ block set to "From this page", and used for FAQ search results.',
+      of: [defineArrayMember({type: 'faqItem'})],
+      hidden: ({document}) => !document?.hasDetailPage,
+    }),
+    defineField({
       name: 'blocks',
       title: 'Blocks',
       type: 'array',
@@ -98,10 +133,14 @@ export const integration = defineType({
     orderRankField({type: 'integration'}),
   ],
   preview: {
-    select: {title: 'name', category: 'category', status: 'status', media: 'logo'},
-    prepare: ({title, category, status, media}) => ({
+    select: {title: 'name', kind: 'kind', category: 'category.title', status: 'status', media: 'logo'},
+    prepare: ({title, kind, category, status, media}) => ({
       title,
-      subtitle: [integrationCategories.find((c) => c.value === category)?.title, status === 'comingSoon' && 'Coming soon']
+      subtitle: [
+        kind === 'addon' ? 'Add-on' : 'Integration',
+        category,
+        status === 'comingSoon' && 'Coming soon',
+      ]
         .filter(Boolean)
         .join(' · '),
       media,

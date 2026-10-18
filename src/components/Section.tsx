@@ -55,7 +55,7 @@ export function Section({
 }
 
 /** Small orange label above a heading. */
-export function Eyebrow({children, className = ''}: {children: ReactNode; className?: string}) {
+export function Eyebrow({children, className = 'mb-4'}: {children: ReactNode; className?: string}) {
   if (!children) return null
-  return <p className={`mb-4 text-[16px] font-semibold text-accent-text ${className}`}>{children}</p>
+  return <p className={`text-[16px] font-semibold text-accent-text ${className}`}>{children}</p>
 }

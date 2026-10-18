@@ -4,6 +4,7 @@ import type {BlockOf, PageBlock} from '@/sanity/content-types'
 
 import {AnchorNavBlock} from './anchorNav/AnchorNavBlock'
 import {CtaBannerBlock} from './ctaBanner/CtaBannerBlock'
+import {FaqBlock} from './faq/FaqBlock'
 import {FeatureGridBlock} from './featureGrid/FeatureGridBlock'
 import {FeatureRowsBlock} from './featureRows/FeatureRowsBlock'
 import {FormBlock} from './form/FormBlock'
@@ -19,7 +20,12 @@ import {RichTextBlock} from './richTextBlock/RichTextBlock'
 import {StatsBlock} from './stats/StatsBlock'
 import {TextMediaBlock} from './textMedia/TextMediaBlock'
 
-type BlockProps<T extends PageBlock['_type']> = {block: BlockOf<T>; isFirst: boolean}
+/** Facts about the page that blocks can use, e.g. the hero eyebrow an add-on page computes from its kind and category. */
+export interface BlocksContext {
+  eyebrow?: string
+}
+
+type BlockProps<T extends PageBlock['_type']> = {block: BlockOf<T>; isFirst: boolean; context?: BlocksContext}
 
 const components: {[T in PageBlock['_type']]: ComponentType<BlockProps<T>>} = {
   heroBlock: HeroBlock,
@@ -36,16 +42,17 @@ const components: {[T in PageBlock['_type']]: ComponentType<BlockProps<T>>} = {
   logoGridBlock: LogoGridBlock,
   integrationDirectoryBlock: IntegrationDirectoryBlock,
   newsListBlock: NewsListBlock,
+  faqBlock: FaqBlock,
   formBlock: FormBlock,
   ctaBannerBlock: CtaBannerBlock,
 }
 
-export function Blocks({blocks}: {blocks: PageBlock[] | null | undefined}) {
+export function Blocks({blocks, context}: {blocks: PageBlock[] | null | undefined; context?: BlocksContext}) {
   if (!blocks?.length) return null
 
   return blocks.map((block, index) => {
     const Component = components[block._type] as ComponentType<BlockProps<typeof block._type>> | undefined
     if (!Component) return null
-    return <Component key={block._key} block={block} isFirst={index === 0} />
+    return <Component key={block._key} block={block} isFirst={index === 0} context={context} />
   })
 }

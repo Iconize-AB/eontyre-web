@@ -10,16 +10,17 @@ export interface Dictionary {
   notFound: {heading: string; text: string; home: string}
   integrations: {
     all: string
+    /** Hero eyebrow of an add-on page: "Add-on · Payments". */
+    addOn: string
+    /** Starting texts of the add-on page template in the Studio. */
+    template: {order: string; getCall: string; howItWorks: string}
     readMore: string
     available: string
     comingSoon: string
     empty: string
     filter: string
-    categories: Record<
-      'accounting' | 'payments' | 'workshop' | 'storage' | 'suppliers' | 'salesChannels' | 'developers',
-      string
-    >
   }
+  faq: {heading: string}
   news: {
     all: string
     readArticle: string

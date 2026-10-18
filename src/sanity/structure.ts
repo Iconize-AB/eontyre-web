@@ -1,5 +1,6 @@
 import {CogIcon} from '@sanity/icons/Cog'
 import {PlugIcon} from '@sanity/icons/Plug'
+import {TagIcon} from '@sanity/icons/Tag'
 import {orderableDocumentListDeskItem} from '@sanity/orderable-document-list'
 import type {ListItemBuilder, StructureResolver} from 'sanity/structure'
 
@@ -50,6 +51,28 @@ export const structure: StructureResolver = (S, context) => {
                   id: `integrations-${locale.id}`,
                   title: locale.title,
                   icon: PlugIcon,
+                  filter: 'language == $language',
+                  params: {language: locale.id},
+                  S,
+                  context,
+                }),
+              ),
+            ),
+        ),
+      S.listItem()
+        .title('Integration categories')
+        .icon(TagIcon)
+        .child(
+          S.list()
+            .title('Integration categories')
+            .items(
+              locales.map((locale) =>
+                // The filter chips on the integration directory, in this order.
+                orderableDocumentListDeskItem({
+                  type: 'integrationCategory',
+                  id: `integration-categories-${locale.id}`,
+                  title: locale.title,
+                  icon: TagIcon,
                   filter: 'language == $language',
                   params: {language: locale.id},
                   S,

@@ -9,6 +9,10 @@ const sizes = {
   xl: 'text-[19px] leading-[1.55] text-fg-muted [&>p+p]:mt-4',
   /** Short item text in grids and cards. */
   base: 'text-[16px] leading-[1.55] text-fg-muted [&>p+p]:mt-2',
+  /** Text inside bordered cards: 15px. */
+  card: 'text-[15px] leading-[1.55] text-fg-muted [&>p+p]:mt-2',
+  /** FAQ answers: 16px with a little more air. */
+  answer: 'text-[16px] leading-[1.6] text-fg-muted [&>p+p]:mt-3',
   /** Long-form text: About, legal pages. */
   prose: 'text-[18px] leading-[1.6] text-fg-muted [&>p+p]:mt-5',
 } as const

@@ -46,7 +46,12 @@ function PhotoBanner({block}: {block: Block}) {
 
 /** Orange band with a black pill. Closes most pages. */
 function AccentBanner({block}: {block: Block}) {
-  const button = block.buttons?.[0]
+  // First button: black pill. Second: outline pill. Both dark text on the orange.
+  const buttons = (block.buttons ?? [])
+    .filter((button): button is NonNullable<typeof button> => Boolean(button?.label))
+    .slice(0, 2)
+  const pill =
+    'inline-flex items-center rounded-full px-[22px] py-[15px] text-[16px] font-semibold whitespace-nowrap transition-colors duration-150 focus-visible:outline-[#141414]'
 
   return (
     <Section
@@ -58,13 +63,22 @@ function AccentBanner({block}: {block: Block}) {
         <h2 className="max-w-[640px] font-display text-[clamp(32px,4vw,56px)] leading-none font-extrabold tracking-[-0.01em] uppercase [font-stretch:115%]">
           {block.heading}
         </h2>
-        {button?.label && (
-          <SmartLink
-            link={button.link}
-            className="inline-flex items-center rounded-full bg-[#141414] px-[22px] py-[15px] text-[16px] font-semibold whitespace-nowrap text-white transition-colors duration-150 hover:bg-[#2a2725] focus-visible:outline-[#141414]"
-          >
-            {button.label}
-          </SmartLink>
+        {buttons.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {buttons.map((button, index) => (
+              <SmartLink
+                key={button._key ?? index}
+                link={button.link}
+                className={
+                  index === 0
+                    ? `${pill} bg-[#141414] text-white hover:bg-[#2a2725]`
+                    : `${pill} border border-[#141414] text-[#141414] hover:bg-[#141414]/10`
+                }
+              >
+                {button.label}
+              </SmartLink>
+            ))}
+          </div>
         )}
       </div>
     </Section>

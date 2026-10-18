@@ -13,6 +13,18 @@ export const featureGridBlockFields = /* groq */ `
       link{${linkFields}}
     },
     variant,
+    source,
+    layout,
+    "related": ^.relatedItems[]->{
+      _id,
+      name,
+      shortDescription,
+      "href": select(
+        defined(linkOverride.linkType) => linkOverride{${linkFields}}.href,
+        hasDetailPage == true => string($prefix) + "/integrations/" + slug.current,
+        string($prefix) + "/integrations?category=" + category->slug.current
+      )
+    },
     ${blockSettings}
   }
 `

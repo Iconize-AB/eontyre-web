@@ -1,7 +1,6 @@
 import {PlugIcon} from '@sanity/icons/Plug'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
-import {integrationCategories} from '../../sanity/schemaTypes/categories'
 import {blockGroups, blockSettingsFields, labelsField} from '../../sanity/schemaTypes/fields'
 import {sameLanguage} from '../../sanity/schemaTypes/language'
 
@@ -33,9 +32,9 @@ export const integrationDirectoryBlock = defineType({
       title: 'Filter categories',
       type: 'array',
       group: 'content',
-      description: 'Leave empty to show every category that has at least one integration.',
-      of: [defineArrayMember({type: 'string'})],
-      options: {list: integrationCategories},
+      description:
+        'Leave empty to show every category that has at least one card. Categories are managed under Integration categories.',
+      of: [defineArrayMember({type: 'reference', to: [{type: 'integrationCategory'}], options: sameLanguage})],
       hidden: ({parent}) => !parent?.showFilter,
     }),
     labelsField([

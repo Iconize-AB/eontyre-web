@@ -46,6 +46,9 @@ export const INTEGRATION_QUERY = defineQuery(`
     _type,
     name,
     "slug": slug.current,
+    kind,
+    "category": category->slug.current,
+    "categoryTitle": category->title,
     shortDescription,
     seo{title, description, image, noIndex},
     ${blocksProjection}

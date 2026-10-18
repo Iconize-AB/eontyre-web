@@ -66,7 +66,7 @@ export const featureRowsBlock = defineType({
       },
       initialValue: 'right',
     }),
-    ...blockSettingsFields({background: false}),
+    ...blockSettingsFields(),
   ],
   preview: {
     select: {heading: 'heading', rows: 'rows', style: 'style', media: 'rows.0.image'},
