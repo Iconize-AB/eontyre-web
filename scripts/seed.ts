@@ -9,7 +9,7 @@
  *   npm run seed -- --extract     writes scripts/translations/source.json and exits
  *   npm run seed -- --only-new    adds documents that don't exist yet (and the "kind" of existing
  *                                 integrations); changes nothing that is already in Sanity
- *   SEED_ASSETS_DIR=path/to/handoff/reference/site/assets npm run seed
+ *   SEED_ASSETS_DIR=path/to/assets npm run seed
  *
  * Images are reused from the Sanity media library by filename. Set
  * SEED_ASSETS_DIR to upload any that are missing. Needs SANITY_API_WRITE_TOKEN

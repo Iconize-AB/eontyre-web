@@ -1,7 +1,6 @@
 /**
- * Content for every page, copied verbatim from the design reference
- * (docs/brief-2.md, reference/site/*.dc.html). The "Log in" links to the
- * Eontyre app in the reference are left out on purpose.
+ * Starting content for every page. Links to the Eontyre app ("Log in") are left
+ * out on purpose.
  */
 import {
   anchorNav,
@@ -635,7 +634,7 @@ export const smsFaq = faqItems([
   ['Can I see in Eontyre when the customer has paid?', 'Yes. A green house shows when the payment is approved.'],
 ])
 
-/** Detail page blocks for SMS payment (reference: reference/site/SMS Payment B.dc.html). */
+/** Detail page blocks for SMS payment. */
 export function smsPaymentBlocks(img: Images) {
   return [
     pageHero({

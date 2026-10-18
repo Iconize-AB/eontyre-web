@@ -7,7 +7,7 @@ import {demoBookings, demoWeek, type Booking, type Source} from './bookingCalend
 /*
  * A static picture of Eontyre's real booking calendar (week view). It copies
  * the product UI on purpose, so it uses the product's own colours rather than
- * the website's tokens. Reference: docs/reference/components/booking-calendar.html.
+ * the website's tokens.
  */
 
 const ROW_HEIGHT = 36

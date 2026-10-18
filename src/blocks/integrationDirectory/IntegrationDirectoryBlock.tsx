@@ -4,7 +4,6 @@ import {Suspense} from 'react'
 import {SanityImage} from '@/components/SanityImage'
 import {Section} from '@/components/Section'
 import {SmartLink} from '@/components/SmartLink'
-import type {Dictionary} from '@/i18n/dictionaries'
 import {getDictionary} from '@/i18n/server'
 import type {BlockOf} from '@/sanity/content-types'
 

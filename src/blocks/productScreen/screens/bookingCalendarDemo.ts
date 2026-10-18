@@ -1,6 +1,6 @@
 /**
  * Demo week shown in the booking calendar mock, copied from the real Eontyre
- * calendar (docs/reference: booking-calendar.html). Editors don't edit this.
+ * calendar. Editors don't edit this.
  */
 
 export type Source = 'admin' | 'online' | 'auto'

@@ -1,4 +1,4 @@
-/** Demo vehicles for the webshop plate search (from the Webshop design reference). */
+/** Demo vehicles for the webshop plate search. */
 
 export interface DemoResult {
   brand: string
