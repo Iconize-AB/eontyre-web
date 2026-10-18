@@ -38,11 +38,11 @@ export const structure: StructureResolver = (S, context) => {
     .items([
       perLanguage('page', 'Pages'),
       S.listItem()
-        .title('Integrations')
+        .title('Add-ons and integrations')
         .icon(PlugIcon)
         .child(
           S.list()
-            .title('Integrations')
+            .title('Add-ons and integrations')
             .items(
               locales.map((locale) =>
                 // Drag to reorder: the integration directory follows this order, per language.
