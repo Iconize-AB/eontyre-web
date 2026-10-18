@@ -7,7 +7,12 @@ export function StatsBlock({block}: {block: BlockOf<'statsBlock'>}) {
   const theme = stegaClean(block.theme) ?? 'dark'
 
   return (
-    <section data-theme={theme} className="border-y border-line bg-bg text-fg">
+    <section
+      id={stegaClean(block.anchorId) || undefined}
+      data-theme={theme}
+      data-background={stegaClean(block.background) === 'surface' ? 'surface' : 'default'}
+      className={`border-y border-line text-fg ${stegaClean(block.background) === 'surface' ? 'bg-surface' : 'bg-bg'}`}
+    >
       <dl className="container-site grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
         {block.items.map((item) => (
           <div key={item._key} className="flex flex-col gap-1.5 py-8">

@@ -1,30 +1,23 @@
 /**
- * Seeds the home page (copy from docs/brief-home.md), the other site pages
- * (scripts/seed-pages.ts), Site settings and integrations. Safe to re-run:
- * documents use fixed IDs and are replaced, so edits made in the Studio to
- * these documents are overwritten.
+ * Seeds every page (scripts/seed-pages.ts), Site settings, the 14 integrations
+ * and the placeholder news posts. Safe to re-run: documents use fixed IDs and
+ * are replaced, so edits made in the Studio to these documents are overwritten.
  *
  *   npm run seed
+ *   SEED_ASSETS_DIR=path/to/handoff/reference/site/assets npm run seed
  *
- * Needs SANITY_API_WRITE_TOKEN (an Editor token) in .env.local.
+ * Images are reused from the Sanity media library by filename. Set
+ * SEED_ASSETS_DIR to upload any that are missing. Needs SANITY_API_WRITE_TOKEN
+ * (an Editor token) in .env.local.
  */
+import {createReadStream, existsSync} from 'node:fs'
+import path from 'node:path'
+
+import {LexoRank} from 'lexorank'
 import {createClient} from 'next-sanity'
 
-import {
-  button,
-  ctaBanner,
-  featureRows,
-  image,
-  integrations,
-  key,
-  link,
-  logoGrid,
-  navItem,
-  page,
-  stats,
-  type Images,
-} from './seed-helpers'
-import {buildPages} from './seed-pages'
+import {image, key, link, navItem, pt, type Images} from './seed-helpers'
+import {buildPages, integrationData, posBlocks, postData} from './seed-pages'
 
 const token = process.env.SANITY_API_WRITE_TOKEN
 if (!token) throw new Error('Missing SANITY_API_WRITE_TOKEN in .env.local')
@@ -37,92 +30,55 @@ const client = createClient({
   useCdn: false,
 })
 
-/** The images were uploaded once from the brief; reuse them from the Sanity media library. */
+const imageFiles: Record<keyof Images, string> = {
+  logoWhite: 'eontyre-logo-white.png',
+  logoBlack: 'eontyre-logo-black.png',
+  hero: 'hero-forest-road.jpg',
+  warehouse: 'px-tyre-warehouse.jpg',
+  counter: 'counter-payment.jpg',
+  truck: 'truck-night.jpg',
+  repair: 'px-kneeling-repair.jpg',
+  carDust: 'car-dust-sunset.jpg',
+  liftWheel: 'px-lift-wheel.jpg',
+  mechanicTyre: 'px-mechanic-holding-tyre.jpg',
+  stackAlloy: 'px-stack-alloy.jpg',
+  tyreHotel: 'workshop-tyre-hotel.jpg',
+  wheelChange: 'workshop-wheel-change.jpg',
+}
+
+/** Reuses an image already in Sanity, or uploads it from SEED_ASSETS_DIR. */
 async function findAsset(filename: string) {
   const id = await client.fetch<string | null>(
     `*[_type == "sanity.imageAsset" && originalFilename == $filename][0]._id`,
     {filename},
   )
-  if (!id) throw new Error(`Image "${filename}" is not in Sanity. Upload it in the Studio first.`)
-  return id
-}
+  if (id) return id
 
-function homePage(img: Images) {
-  return {
-    ...page(
-      'home',
-      'Home',
-      'The business system, webshop and API for the tyre industry. Sales, tyre storage, booking and stock in one place, in the browser.',
-      [
-        {
-          _key: key(),
-          _type: 'heroBlock',
-          eyebrow: 'Welcome to a',
-          heading: 'World of Tyres',
-          body: 'The business system, webshop and API for the tyre industry. Sales, tyre storage, booking and stock in one place, in the browser.',
-          image: image(img.hero, 'Car on a gravel road through a pine forest at sunset'),
-          height: 'tall',
-          action: 'plateSearch',
-          plateSearch: {placeholder: 'ABC 123', buttonLabel: 'Find tyres', targetUrl: '/webshop'},
-          theme: 'dark',
-        },
-        stats([
-          ['2.4M', 'tyres sold'],
-          ['38M', 'API calls a year'],
-          ['140,000', 'sets in tyre hotels'],
-        ]),
-        featureRows([
-          {
-            title: 'Business system',
-            body: 'Sales, off-season tyre storage, booking, stock and customer registers for tyre workshops.',
-            image: image(img.warehouse, 'Racks of stored tyres'),
-            link: '/business-system',
-          },
-          {
-            title: 'Webshop',
-            body: 'Registration number search, live stock, fitting bookings and online payment.',
-            image: image(img.counter, 'Customer paying at a tyre shop counter'),
-            link: '/webshop',
-          },
-          {
-            title: 'API and integrations',
-            body: 'Fortnox, Unit4, point of sale, Vecheck, suppliers and a REST API for everything else.',
-            image: image(img.truck, 'Truck tyres at night'),
-            link: '/api',
-          },
-        ]),
-        logoGrid({
-          heading: 'Connected to the rest of your business',
-          body: 'Accounting, payments, check-in, inspections and storage work together with Eontyre.',
-          button: button('All integrations', '/integrations', 'outline'),
-          spacingTop: 'none',
-        }),
-        ctaBanner({
-          heading: 'We help you get started',
-          body: 'We book a meeting, go through your workflow and set up Eontyre with you. Phone support, upgrades and backups are included.',
-          button: button('Try free for 30 days', '/start'),
-          image: image(img.repair, 'Mechanic tightening wheel bolts', {x: 0.5, y: 0.3}),
-        }),
-      ],
-    ),
-    seo: {
-      _type: 'seo',
-      title: 'Eontyre — Business system, webshop and API for the tyre industry',
-      description:
-        'The business system, webshop and API for the tyre industry. Sales, tyre storage, booking and stock in one place, in the browser.',
-      noIndex: false,
-    },
+  const dir = process.env.SEED_ASSETS_DIR
+  const file = dir && path.join(dir, filename)
+  if (!file || !existsSync(file)) {
+    throw new Error(`Image "${filename}" is not in Sanity. Upload it in the Studio, or set SEED_ASSETS_DIR.`)
   }
+  const asset = await client.assets.upload('image', createReadStream(file), {filename})
+  console.log(`  uploaded ${filename}`)
+  return asset._id
 }
 
-function siteSettings(logoWhite: string, logoBlack: string) {
+async function loadImages(): Promise<Images> {
+  const entries = await Promise.all(
+    Object.entries(imageFiles).map(async ([name, filename]) => [name, await findAsset(filename)] as const),
+  )
+  return Object.fromEntries(entries) as Images
+}
+
+function siteSettings(img: Images) {
   return {
     _id: 'siteSettings',
     _type: 'siteSettings',
     siteTitle: 'Eontyre',
     homePage: {_type: 'reference', _ref: 'page-home'},
-    logo: image(logoWhite, 'Eontyre'),
-    logoOnLight: image(logoBlack, 'Eontyre'),
+    logo: image(img.logoWhite, 'Eontyre'),
+    logoOnLight: image(img.logoBlack, 'Eontyre'),
     navItems: [
       navItem('Business system', '/business-system'),
       navItem('Webshop', '/webshop'),
@@ -151,11 +107,7 @@ function siteSettings(logoWhite: string, logoBlack: string) {
         _key: key(),
         _type: 'footerColumn',
         title: 'Get started',
-        links: [
-          navItem('Free 30-day trial', '/start'),
-          navItem('Book a demo', '/start'),
-          navItem('News', '/news'),
-        ],
+        links: [navItem('Free 30-day trial', '/start'), navItem('Book a demo', '/start'), navItem('News', '/news')],
       },
     ],
     contact: {
@@ -174,40 +126,64 @@ function siteSettings(logoWhite: string, logoBlack: string) {
   }
 }
 
+/** Integrations seeded in phase 1 that phase 2 replaces. */
+const obsoleteIds = ['integration-point-of-sale']
+
 async function seed() {
   console.log(`Seeding ${client.config().projectId}/${client.config().dataset}`)
-
-  const [logoWhite, logoBlack, hero, warehouse, counter, truck, repair] = await Promise.all([
-    findAsset('eontyre-logo-white.png'),
-    findAsset('eontyre-logo-black.png'),
-    findAsset('hero-forest-road.jpg'),
-    findAsset('px-tyre-warehouse.jpg'),
-    findAsset('counter-payment.jpg'),
-    findAsset('truck-night.jpg'),
-    findAsset('px-kneeling-repair.jpg'),
-  ])
-  const img: Images = {hero, warehouse, counter, truck, repair}
+  const img = await loadImages()
 
   const tx = client.transaction()
 
-  for (const integration of integrations) {
+  // Lexorank strings, so the order can be changed by dragging in the Studio.
+  let rank = LexoRank.middle()
+  for (const integration of integrationData) {
+    const isPos = integration.id === 'integrated-point-of-sale'
     tx.createOrReplace({
       _id: `integration-${integration.id}`,
       _type: 'integration',
       name: integration.name,
       slug: {_type: 'slug', current: integration.id},
+      shortName: integration.shortName,
       category: integration.category,
-      status: 'available',
+      shortDescription: integration.shortDescription,
+      status: integration.status,
+      hasDetailPage: isPos,
+      ...(isPos && {blocks: posBlocks(img)}),
+      ...(integration.linkOverride && {linkOverride: link(integration.linkOverride)}),
+      orderRank: rank.toString(),
+    })
+    rank = rank.genNext().genNext()
+  }
+
+  // Pages next: links in Site settings and on other pages reference them.
+  const pages = buildPages(img)
+  for (const doc of pages) tx.createOrReplace(doc)
+  tx.createOrReplace(siteSettings(img))
+
+  // All news posts are placeholders, so they are created as drafts only.
+  for (const post of postData) {
+    tx.createOrReplace({
+      _id: `drafts.post-${post.id}`,
+      _type: 'post',
+      title: post.title,
+      slug: {_type: 'slug', current: post.id},
+      publishedAt: post.date,
+      category: post.category,
+      excerpt: post.excerpt,
+      featured: Boolean(post.featured),
+      ...(post.image && {mainImage: image(img[post.image], post.imageAlt ?? '')}),
+      body: pt(post.excerpt),
     })
   }
 
-  // Pages first: links in Site settings and on other pages reference them.
-  const pages = [homePage(img), ...buildPages(img)]
-  for (const doc of pages) tx.createOrReplace(doc)
-  tx.createOrReplace(siteSettings(logoWhite, logoBlack))
+  // Replaced in this transaction above, so nothing references them any more.
+  for (const id of obsoleteIds) tx.delete(id)
 
   await tx.commit()
-  console.log(`Done: ${pages.length} pages, Site settings and ${integrations.length} integrations published.`)
+  console.log(
+    `Done: ${pages.length} pages, ${integrationData.length} integrations, Site settings and ${postData.length} draft posts.`,
+  )
 }
 
 seed().catch((error) => {

@@ -1,7 +1,12 @@
 import {ThListIcon} from '@sanity/icons/ThList'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
-import {blockGroups, imageField, spacingField, themeField} from '../../sanity/schemaTypes/fields'
+import {blockGroups, blockSettingsFields, blockSubtitle, imageField} from '../../sanity/schemaTypes/fields'
+
+const styles = [
+  {title: 'Panels (whole row is a link)', value: 'panels'},
+  {title: 'Editorial (text link per row)', value: 'editorial'},
+]
 
 export const featureRowsBlock = defineType({
   name: 'featureRowsBlock',
@@ -16,7 +21,7 @@ export const featureRowsBlock = defineType({
       title: 'Rows',
       type: 'array',
       group: 'content',
-      description: 'Rows are numbered 01, 02, 03… in this order.',
+      description: 'In the panels style, rows are numbered 01, 02, 03… in this order.',
       validation: (rule) => rule.min(1),
       of: [
         defineArrayMember({
@@ -26,11 +31,25 @@ export const featureRowsBlock = defineType({
             defineField({name: 'title', title: 'Title', type: 'string', validation: (rule) => rule.required()}),
             defineField({name: 'body', title: 'Body', type: 'text', rows: 3}),
             imageField({name: 'image', title: 'Image', required: true}),
-            defineField({name: 'link', title: 'Link', type: 'link', description: 'The whole row links here.'}),
+            defineField({name: 'link', title: 'Link', type: 'link'}),
+            defineField({
+              name: 'linkLabel',
+              title: 'Link text',
+              type: 'string',
+              description: 'Editorial style only. The panels style makes the whole row the link.',
+            }),
           ],
           preview: {select: {title: 'title', subtitle: 'body', media: 'image'}},
         }),
       ],
+    }),
+    defineField({
+      name: 'style',
+      title: 'Style',
+      type: 'string',
+      group: 'style',
+      options: {list: styles, layout: 'radio'},
+      initialValue: 'panels',
     }),
     defineField({
       name: 'imagePosition',
@@ -47,14 +66,14 @@ export const featureRowsBlock = defineType({
       },
       initialValue: 'right',
     }),
-    themeField,
-    spacingField,
+    ...blockSettingsFields({background: false}),
   ],
   preview: {
-    select: {heading: 'heading', rows: 'rows'},
-    prepare: ({heading, rows}: {heading?: string; rows?: {title?: string}[]}) => ({
-      title: heading || rows?.map((row) => row.title).join(' · ') || 'Feature rows',
-      subtitle: 'Feature rows',
+    select: {heading: 'heading', rows: 'rows', style: 'style', media: 'rows.0.image'},
+    prepare: ({heading, rows, style, media}) => ({
+      title: heading || (rows as {title?: string}[] | undefined)?.map((row) => row.title).join(' · ') || 'Feature rows',
+      subtitle: blockSubtitle('Feature rows', styles.find((s) => s.value === (style ?? 'panels'))?.title.split(' (')[0]),
+      media,
     }),
   },
 })

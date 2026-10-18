@@ -19,6 +19,7 @@ export function HeroBlock({block, isFirst}: {block: BlockOf<'heroBlock'>; isFirs
 
   return (
     <section
+      id={stegaClean(block.anchorId) || undefined}
       data-theme={theme}
       className={`relative flex items-end overflow-hidden bg-[#1a120b] text-fg ${heights[height]}`}
     >

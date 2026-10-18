@@ -1,7 +1,7 @@
 import {ThLargeIcon} from '@sanity/icons/ThLarge'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
-import {blockGroups, spacingField, themeField} from '../../sanity/schemaTypes/fields'
+import {blockGroups, blockSettingsFields} from '../../sanity/schemaTypes/fields'
 
 export const logoGridBlock = defineType({
   name: 'logoGridBlock',
@@ -27,8 +27,7 @@ export const logoGridBlock = defineType({
       description: 'Shows the logo when one is uploaded, otherwise the name.',
       of: [defineArrayMember({type: 'reference', to: [{type: 'integration'}]})],
     }),
-    themeField,
-    spacingField,
+    ...blockSettingsFields(),
   ],
   preview: {
     select: {title: 'heading'},

@@ -2,16 +2,15 @@ import {stegaClean} from 'next-sanity'
 
 import {Button} from '@/components/Button'
 import {SanityImage} from '@/components/SanityImage'
+import {Section} from '@/components/Section'
 import type {BlockOf} from '@/sanity/content-types'
 
-import {spacingClasses} from '../spacing'
-
 export function LogoGridBlock({block}: {block: BlockOf<'logoGridBlock'>}) {
-  const theme = stegaClean(block.theme) ?? 'dark'
   const items = block.items?.filter((item) => item !== null) ?? []
 
   return (
-    <section data-theme={theme} className={`bg-bg text-fg ${spacingClasses(block.spacing)}`}>
+    // Home spacing (phase 1): section-pt/pb rather than the phase 2 block padding.
+    <Section settings={block} padded={false} className={`${stegaClean(block.paddingTop) === 'none' ? '' : 'section-pt'} section-pb`}>
       <div className="container-wide grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-x-16 gap-y-10">
         <div className="flex flex-col gap-5">
           <h2 className="type-h2">{block.heading}</h2>
@@ -35,6 +34,6 @@ export function LogoGridBlock({block}: {block: BlockOf<'logoGridBlock'>}) {
           </ul>
         )}
       </div>
-    </section>
+    </Section>
   )
 }

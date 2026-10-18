@@ -1,7 +1,7 @@
 import {BarChartIcon} from '@sanity/icons/BarChart'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
-import {blockGroups, themeField} from '../../sanity/schemaTypes/fields'
+import {anchorIdField, blockGroups, backgroundField, themeField} from '../../sanity/schemaTypes/fields'
 
 export const statsBlock = defineType({
   name: 'statsBlock',
@@ -35,6 +35,8 @@ export const statsBlock = defineType({
       ],
     }),
     themeField,
+    backgroundField,
+    anchorIdField,
   ],
   preview: {
     select: {items: 'items'},

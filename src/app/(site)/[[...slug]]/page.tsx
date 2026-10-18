@@ -6,9 +6,9 @@ import {Suspense} from 'react'
 
 import {Blocks} from '@/blocks'
 import type {PageData} from '@/sanity/content-types'
-import {urlFor} from '@/sanity/image'
 import {cachedSanity, getDraftFetchOptions, publishedFetchOptions, type FetchOptions} from '@/sanity/live'
-import {PAGE_QUERY, PAGE_SLUGS_QUERY, SETTINGS_QUERY} from '@/sanity/queries'
+import {buildMetadata} from '@/sanity/metadata'
+import {PAGE_QUERY, PAGE_SLUGS_QUERY} from '@/sanity/queries'
 
 type Props = PageProps<'/[[...slug]]'>
 
@@ -22,28 +22,9 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({params}: Props): Promise<Metadata> {
   const slug = toSlug((await params).slug)
-  const [{data: page}, {data: settings}] = await Promise.all([
-    cachedSanity({query: PAGE_QUERY, params: {slug}, ...publishedFetchOptions}),
-    cachedSanity({query: SETTINGS_QUERY, ...publishedFetchOptions}),
-  ])
+  const {data: page} = await cachedSanity({query: PAGE_QUERY, params: {slug}, ...publishedFetchOptions})
   if (!page) return {}
-
-  const siteTitle = settings?.siteTitle ?? 'Eontyre'
-  const title = page.seo?.title || (page.isHome ? settings?.seo?.title || siteTitle : page.title)
-  const description = page.seo?.description || settings?.seo?.description || undefined
-  const shareImage = page.seo?.image?.asset ? page.seo.image : settings?.seo?.image?.asset ? settings.seo.image : null
-
-  return {
-    title: page.isHome ? {absolute: title} : `${title} | ${siteTitle}`,
-    description,
-    robots: page.seo?.noIndex ? {index: false, follow: false} : undefined,
-    openGraph: {
-      title,
-      description,
-      siteName: siteTitle,
-      images: shareImage ? [{url: urlFor(shareImage).width(1200).height(630).fit('crop').url(), width: 1200, height: 630}] : undefined,
-    },
-  }
+  return buildMetadata({title: page.title, seo: page.seo, isHome: page.isHome})
 }
 
 export default async function Page({params}: Props) {

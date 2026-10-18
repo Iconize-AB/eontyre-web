@@ -2,7 +2,23 @@ import {randomUUID} from 'node:crypto'
 
 export const key = () => randomUUID().slice(0, 12)
 
-export type Images = Record<'hero' | 'warehouse' | 'counter' | 'truck' | 'repair', string>
+/** Image asset IDs by short name, resolved in seed.ts. */
+export type Images = Record<
+  | 'logoWhite'
+  | 'logoBlack'
+  | 'hero'
+  | 'warehouse'
+  | 'counter'
+  | 'truck'
+  | 'repair'
+  | 'carDust'
+  | 'liftWheel'
+  | 'mechanicTyre'
+  | 'stackAlloy'
+  | 'tyreHotel'
+  | 'wheelChange',
+  string
+>
 
 /** Pages created by the seed, by path. Links to these become references; anything else stays a URL. */
 export const PAGE_IDS: Record<string, string> = {
@@ -12,6 +28,7 @@ export const PAGE_IDS: Record<string, string> = {
   '/api': 'page-api',
   '/integrations': 'page-integrations',
   '/who-its-for': 'page-who-its-for',
+  '/news': 'page-news',
   '/about': 'page-about',
   '/support': 'page-support',
   '/start': 'page-start',
@@ -29,69 +46,190 @@ export function image(assetId: string, alt: string, hotspot?: {x: number; y: num
   }
 }
 
+/** A path such as "/about#contact" links to that page and block; other values stay URLs. */
 export function link(target: string) {
-  const pageId = PAGE_IDS[target]
-  return pageId
-    ? {_type: 'link', linkType: 'internal', page: {_type: 'reference', _ref: pageId}, openInNewTab: false}
-    : {_type: 'link', linkType: 'external', url: target, openInNewTab: false}
+  const [path, anchor] = target.split('#')
+  const pageId = PAGE_IDS[path]
+  if (pageId) {
+    return {
+      _type: 'link',
+      linkType: 'internal',
+      page: {_type: 'reference', _ref: pageId},
+      ...(anchor && {anchor}),
+      openInNewTab: false,
+    }
+  }
+  if (target.startsWith('/integrations/')) {
+    return {
+      _type: 'link',
+      linkType: 'internal',
+      page: {_type: 'reference', _ref: `integration-${target.split('/')[2]}`},
+      openInNewTab: false,
+    }
+  }
+  return {_type: 'link', linkType: 'external', url: target, openInNewTab: false}
 }
 
 export const navItem = (label: string, target: string) => ({_key: key(), _type: 'navItem', label, link: link(target)})
 
 export const button = (label: string, target: string, variant: 'primary' | 'outline' = 'primary') => ({
+  _key: key(),
   _type: 'button',
   label,
   variant,
   link: link(target),
 })
 
-export const integrations = [
-  {id: 'fortnox', name: 'Fortnox', category: 'accounting'},
-  {id: 'unit4', name: 'Unit4', category: 'accounting'},
-  {id: 'point-of-sale', name: 'Point of sale', category: 'payments'},
-  {id: 'check-in', name: 'Check-in', category: 'inspection'},
-  {id: 'vecheck', name: 'Vecheck', category: 'inspection'},
-  {id: 'tread-scanning', name: 'Tread scanning', category: 'inspection'},
-]
+/** Portable Text. Strings are paragraphs; arrays mix text and `{text, href}` links in one paragraph. */
+type Inline = string | {text: string; href: string}
+export function pt(...paragraphs: (string | Inline[])[]) {
+  return paragraphs.map((paragraph) => {
+    const parts = typeof paragraph === 'string' ? [paragraph] : paragraph
+    const markDefs: Record<string, unknown>[] = []
+    const children = parts.map((part) => {
+      if (typeof part === 'string') return {_type: 'span', _key: key(), text: part, marks: []}
+      const markKey = key()
+      markDefs.push({_key: markKey, ...link(part.href)})
+      return {_type: 'span', _key: key(), text: part.text, marks: [markKey]}
+    })
+    return {_type: 'block', _key: key(), style: 'normal', markDefs, children}
+  })
+}
 
-export const integrationRefs = () =>
-  integrations.map((integration) => ({_key: key(), _type: 'reference', _ref: `integration-${integration.id}`}))
+const settings = (overrides: {background?: 'surface'; anchorId?: string; paddingTop?: 'none'} = {}) => ({
+  theme: 'dark',
+  background: overrides.background ?? 'default',
+  paddingTop: overrides.paddingTop ?? 'default',
+  ...(overrides.anchorId && {anchorId: overrides.anchorId}),
+})
+
+type Settings = Parameters<typeof settings>[0]
 
 // Block builders. Keep field names in step with src/blocks/*/schema.ts.
 
-export const hero = (fields: {
-  eyebrow?: string
-  heading: string
-  body: string
-  image: ReturnType<typeof image>
-  buttons?: ReturnType<typeof button>[]
-}) => ({
+export const pageHero = (
+  fields: {
+    eyebrow?: string
+    heading: string
+    body?: ReturnType<typeof pt>
+    buttons?: ReturnType<typeof button>[]
+    contactLines?: {label: string; href: string}[]
+    media?: 'none' | 'image' | 'imageTop' | 'code'
+    image?: ReturnType<typeof image>
+    code?: {method: string; path: string; code: string}
+  },
+  anchorId?: string,
+) => ({
   _key: key(),
-  _type: 'heroBlock',
+  _type: 'pageHeroBlock',
   eyebrow: fields.eyebrow,
   heading: fields.heading,
   body: fields.body,
+  buttons: fields.buttons,
+  contactLines: fields.contactLines?.map((line) => ({_key: key(), _type: 'contactLine', ...line})),
+  media: fields.media ?? 'none',
   image: fields.image,
-  height: 'tall',
-  action: fields.buttons?.length ? 'buttons' : 'none',
-  buttons: fields.buttons?.map((item) => ({_key: key(), ...item})),
+  ...(fields.code && {codeMethod: fields.code.method, codePath: fields.code.path, code: fields.code.code}),
   theme: 'dark',
+  ...(anchorId && {anchorId}),
 })
 
-export const stats = (items: [string, string][]) => ({
+export const anchorNav = (items: [label: string, anchorId: string][]) => ({
   _key: key(),
-  _type: 'statsBlock',
-  items: items.map(([value, label]) => ({_key: key(), _type: 'stat', value, label})),
-  theme: 'dark',
+  _type: 'anchorNavBlock',
+  items: items.map(([label, anchorId]) => ({_key: key(), _type: 'anchorNavItem', label, anchorId})),
+  ...settings(),
+})
+
+export const productScreen = (
+  fields: {heading: string; body: ReturnType<typeof pt>; note?: string; screen: string; layout?: 'split' | 'stacked'},
+  options?: Settings,
+) => ({_key: key(), _type: 'productScreenBlock', ...fields, ...settings(options)})
+
+export const textMedia = (
+  fields: {
+    heading: string
+    body: ReturnType<typeof pt>
+    image: ReturnType<typeof image>
+    imagePosition: 'left' | 'right'
+    list?: string[]
+    listStyle?: 'numbered' | 'plain'
+  },
+  options?: Settings,
+) => ({_key: key(), _type: 'textMediaBlock', ...fields, ...settings(options)})
+
+export const featureGrid = (
+  fields: {
+    heading?: string
+    body?: ReturnType<typeof pt>
+    headerLink?: ReturnType<typeof navItem>
+    variant: 'topRule' | 'numbered' | 'steps' | 'cards'
+    items: {title: string; body?: ReturnType<typeof pt>; link?: string}[]
+  },
+  options?: Settings,
+) => ({
+  _key: key(),
+  _type: 'featureGridBlock',
+  heading: fields.heading,
+  body: fields.body,
+  headerLink: fields.headerLink && {...fields.headerLink, _key: undefined},
+  variant: fields.variant,
+  items: fields.items.map((item) => ({
+    _key: key(),
+    _type: 'featureGridItem',
+    title: item.title,
+    body: item.body,
+    ...(item.link && {link: link(item.link)}),
+  })),
+  ...settings(options),
+})
+
+export const linkList = (
+  fields: {
+    heading: string
+    body: ReturnType<typeof pt>
+    button?: ReturnType<typeof button>
+    items: {label: string; meta?: string; link?: string}[]
+  },
+  options?: Settings,
+) => ({
+  _key: key(),
+  _type: 'linkListBlock',
+  heading: fields.heading,
+  body: fields.body,
+  button: fields.button && {...fields.button, _key: undefined},
+  items: fields.items.map((item) => ({
+    _key: key(),
+    _type: 'linkListItem',
+    label: item.label,
+    meta: item.meta,
+    ...(item.link && {link: link(item.link)}),
+  })),
+  ...settings(options),
+})
+
+export const richTextBlock = (fields: {heading: string; body: ReturnType<typeof pt>; layout?: 'split' | 'single'}, options?: Settings) => ({
+  _key: key(),
+  _type: 'richTextBlock',
+  layout: 'split',
+  ...fields,
+  ...settings(options),
+})
+
+export const imageBlock = (img: ReturnType<typeof image>, aspect: '21:8' | '16:9' | '3:2', options?: Settings) => ({
+  _key: key(),
+  _type: 'imageBlock',
+  image: img,
+  aspect,
+  ...settings(options),
 })
 
 export const featureRows = (
-  rows: {title: string; body: string; image: ReturnType<typeof image>; link?: string}[],
-  options: {heading?: string; imagePosition?: 'right' | 'alternate'; spacingTop?: 'default' | 'none'} = {},
+  rows: {title: string; body: string; image: ReturnType<typeof image>; link?: string; linkLabel?: string}[],
+  options: {style?: 'panels' | 'editorial'; imagePosition?: 'right' | 'alternate'} & Settings = {},
 ) => ({
   _key: key(),
   _type: 'featureRowsBlock',
-  heading: options.heading,
   rows: rows.map((row) => ({
     _key: key(),
     _type: 'featureRow',
@@ -99,39 +237,93 @@ export const featureRows = (
     body: row.body,
     image: row.image,
     ...(row.link && {link: link(row.link)}),
+    linkLabel: row.linkLabel,
   })),
+  style: options.style ?? 'panels',
   imagePosition: options.imagePosition ?? 'right',
+  ...settings(options),
+})
+
+export const stats = (items: [string, string][]) => ({
+  _key: key(),
+  _type: 'statsBlock',
+  items: items.map(([value, label]) => ({_key: key(), _type: 'stat', value, label})),
   theme: 'dark',
-  spacing: {top: options.spacingTop ?? 'default', bottom: 'default'},
+  background: 'default',
 })
 
 export const logoGrid = (fields: {
   heading: string
   body: string
   button?: ReturnType<typeof button>
-  spacingTop?: 'default' | 'none'
+  /** Integration IDs without the "integration-" prefix. */
+  items: string[]
+  paddingTop?: 'default' | 'none'
 }) => ({
   _key: key(),
   _type: 'logoGridBlock',
   heading: fields.heading,
   body: fields.body,
-  button: fields.button,
-  items: integrationRefs(),
-  theme: 'dark',
-  spacing: {top: fields.spacingTop ?? 'default', bottom: 'default'},
+  button: fields.button && {...fields.button, _key: undefined},
+  items: fields.items.map((id) => ({_key: key(), _type: 'reference', _ref: `integration-${id}`})),
+  ...settings({paddingTop: fields.paddingTop === 'none' ? 'none' : undefined}),
 })
 
-export const ctaBanner = (fields: {
-  heading: string
-  body: string
-  button: ReturnType<typeof button>
-  image: ReturnType<typeof image>
-}) => ({
+export const integrationDirectory = (options?: Settings) => ({
+  _key: key(),
+  _type: 'integrationDirectoryBlock',
+  showFilter: true,
+  ...settings(options),
+})
+
+export const newsList = (options?: Settings) => ({
+  _key: key(),
+  _type: 'newsListBlock',
+  showFeatured: true,
+  showFilter: true,
+  pageSize: 10,
+  ...settings(options),
+})
+
+export const form = (
+  fields: {
+    formType: 'contact' | 'trial' | 'newsletter'
+    heading: string
+    body?: ReturnType<typeof pt>
+    submitLabel: string
+    finePrint?: ReturnType<typeof pt>
+    successHeading: string
+    successBody?: string
+    layout: 'split' | 'withImage' | 'inline'
+    headingLevel?: 'h1' | 'h2'
+    image?: ReturnType<typeof image>
+  },
+  options?: Settings,
+) => ({
+  _key: key(),
+  _type: 'formBlock',
+  headingLevel: 'h2',
+  errorText: 'Something went wrong. Please try again, or call us.',
+  ...fields,
+  ...settings(options),
+})
+
+export const ctaBanner = (
+  fields: {
+    heading: string
+    body?: string
+    buttons: ReturnType<typeof button>[]
+    style: 'photo' | 'accent' | 'surface'
+    image?: ReturnType<typeof image>
+  },
+  anchorId?: string,
+) => ({
   _key: key(),
   _type: 'ctaBannerBlock',
   ...fields,
-  overlayOpacity: 0.55,
+  ...(fields.style === 'photo' && {overlayOpacity: 0.55}),
   theme: 'dark',
+  ...(anchorId && {anchorId}),
 })
 
 export function page(slug: string, title: string, description: string, blocks: unknown[]) {

@@ -15,6 +15,6 @@ export type PageBlock = NonNullable<PageData['blocks']>[number]
 export type BlockOf<T extends PageBlock['_type']> = Extract<PageBlock, {_type: T}>
 
 export type ImageData = NonNullable<BlockOf<'heroBlock'>['image']>
-export type LinkData = NonNullable<NonNullable<BlockOf<'ctaBannerBlock'>['button']>['link']>
-export type ButtonData = NonNullable<BlockOf<'ctaBannerBlock'>['button']>
+export type ButtonData = Omit<NonNullable<BlockOf<'heroBlock'>['buttons']>[number], '_key'>
+export type LinkData = NonNullable<ButtonData['link']>
 export type NavItemData = NonNullable<SettingsData['primaryCta']>

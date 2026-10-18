@@ -1,4 +1,4 @@
-import {buttonFields, imageFields} from '../../sanity/fragments'
+import {blockSettings, buttonFields, imageFields} from '../../sanity/fragments'
 
 export const logoGridBlockFields = /* groq */ `
   _type == "logoGridBlock" => {
@@ -6,7 +6,6 @@ export const logoGridBlockFields = /* groq */ `
     body,
     button{${buttonFields}},
     items[]->{_id, name, logo{${imageFields}}},
-    theme,
-    spacing
+    ${blockSettings}
   }
 `

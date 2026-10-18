@@ -1,4 +1,4 @@
-import {defineField} from 'sanity'
+import {defineField, type FieldDefinition} from 'sanity'
 
 interface ImageFieldOptions {
   name: string
@@ -28,6 +28,11 @@ export function imageField(options: ImageFieldOptions) {
   })
 }
 
+/** Paragraphs with bold and links. Used for body copy in blocks. */
+export function richTextField(options: {name?: string; title?: string; group?: string; description?: string} = {}) {
+  return defineField({name: 'body', title: 'Body', group: 'content', ...options, type: 'richText'})
+}
+
 export const themeField = defineField({
   name: 'theme',
   title: 'Theme',
@@ -44,29 +49,81 @@ export const themeField = defineField({
   group: 'style',
 })
 
-const spacingOptions = {
-  list: [
-    {title: 'Default', value: 'default'},
-    {title: 'None', value: 'none'},
-  ],
-  layout: 'radio' as const,
-  direction: 'horizontal' as const,
+export const backgroundField = defineField({
+  name: 'background',
+  title: 'Background',
+  type: 'string',
+  options: {
+    list: [
+      {title: 'Default', value: 'default'},
+      {title: 'Surface', value: 'surface'},
+    ],
+    layout: 'radio',
+    direction: 'horizontal',
+  },
+  initialValue: 'default',
+  group: 'style',
+})
+
+export const paddingTopField = defineField({
+  name: 'paddingTop',
+  title: 'Space above',
+  type: 'string',
+  description: 'Choose "None" when the block continues the one above it.',
+  options: {
+    list: [
+      {title: 'Default', value: 'default'},
+      {title: 'None', value: 'none'},
+    ],
+    layout: 'radio',
+    direction: 'horizontal',
+  },
+  initialValue: 'default',
+  group: 'style',
+})
+
+export const anchorIdField = defineField({
+  name: 'anchorId',
+  title: 'Anchor ID',
+  type: 'string',
+  group: 'style',
+  description: 'Lets jump links point here, e.g. "booking" for /business-system#booking.',
+  validation: (rule) =>
+    rule.regex(/^[a-z][a-z0-9-]*$/, {name: 'anchor'}).error('Lowercase letters, numbers and hyphens'),
+})
+
+/** The style settings every block has (BRIEF-2, "Rules for every block"). */
+export function blockSettingsFields({
+  background = true,
+  paddingTop = true,
+}: {background?: boolean; paddingTop?: boolean} = {}): FieldDefinition[] {
+  return [
+    themeField,
+    ...(background ? [backgroundField] : []),
+    anchorIdField,
+    ...(paddingTop ? [paddingTopField] : []),
+  ]
 }
 
-/** Vertical section padding, e.g. to let a block sit directly under the previous one. */
-export const spacingField = defineField({
-  name: 'spacing',
-  title: 'Spacing',
-  type: 'object',
-  group: 'style',
-  options: {collapsible: true, collapsed: true},
-  fields: [
-    defineField({name: 'top', title: 'Top', type: 'string', options: spacingOptions, initialValue: 'default'}),
-    defineField({name: 'bottom', title: 'Bottom', type: 'string', options: spacingOptions, initialValue: 'default'}),
-  ],
-})
+/** Small interface texts (button labels, empty states) with sensible defaults. */
+export function labelsField(labels: {name: string; title: string; initialValue: string}[]) {
+  return defineField({
+    name: 'labels',
+    title: 'Interface texts',
+    type: 'object',
+    group: 'content',
+    options: {collapsible: true, collapsed: true},
+    fields: labels.map((label) => defineField({...label, type: 'string'})),
+    initialValue: Object.fromEntries(labels.map((label) => [label.name, label.initialValue])),
+  })
+}
 
 export const blockGroups = [
   {name: 'content', title: 'Content', default: true},
   {name: 'style', title: 'Style'},
 ]
+
+/** Builds a Studio preview subtitle such as "Feature grid · Top rule". */
+export function blockSubtitle(blockTitle: string, variant?: string | null) {
+  return variant ? `${blockTitle} · ${variant}` : blockTitle
+}

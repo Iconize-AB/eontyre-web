@@ -1,7 +1,7 @@
 import {ImageIcon} from '@sanity/icons/Image'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
-import {blockGroups, imageField, themeField} from '../../sanity/schemaTypes/fields'
+import {anchorIdField, blockGroups, imageField, themeField} from '../../sanity/schemaTypes/fields'
 
 export const heroBlock = defineType({
   name: 'heroBlock',
@@ -78,6 +78,7 @@ export const heroBlock = defineType({
       initialValue: 'tall',
     }),
     themeField,
+    anchorIdField,
   ],
   preview: {
     select: {title: 'heading', subtitle: 'eyebrow', media: 'image'},

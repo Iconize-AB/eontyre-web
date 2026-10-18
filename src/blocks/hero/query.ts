@@ -10,6 +10,7 @@ export const heroBlockFields = /* groq */ `
     buttons[]{_key, ${buttonFields}},
     plateSearch{placeholder, buttonLabel, targetUrl},
     height,
-    theme
+    theme,
+    anchorId
   }
 `

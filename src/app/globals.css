@@ -23,6 +23,16 @@
   --footer-link: #d9d4ce;
   --footer-line: #333333;
   --plate-blue: #1f4fb8;
+  --hairline: #2a2725;
+  --field-line: #4a4541;
+  --chip-line: #4a4541;
+  --tile: #24211f;
+  --status-ok: #6fcf97;
+}
+
+/* Hairlines are a touch lighter on the surface background. */
+[data-background="surface"] {
+  --hairline: #34302d;
 }
 
 /* Direction C. Layout is shared; only dark is finished in the first delivery. */
@@ -38,6 +48,15 @@
   --accent-text: #c2540f;
   --footer-link: #3d3833;
   --footer-line: #e2dcd5;
+  --hairline: #e2dcd5;
+  --field-line: #b9b1a8;
+  --chip-line: #b9b1a8;
+  --tile: #ede8e2;
+  --status-ok: #1e7a45;
+}
+
+[data-theme="light"][data-background="surface"] {
+  --hairline: #d9d2ca;
 }
 
 @theme inline {
@@ -58,6 +77,11 @@
   --color-footer-link: var(--footer-link);
   --color-footer-line: var(--footer-line);
   --color-plate: var(--plate-blue);
+  --color-hairline: var(--hairline);
+  --color-field-line: var(--field-line);
+  --color-chip-line: var(--chip-line);
+  --color-tile: var(--tile);
+  --color-status-ok: var(--status-ok);
 
   --font-sans: var(--font-schibsted), system-ui, sans-serif;
   --font-display: var(--font-archivo), system-ui, sans-serif;
@@ -117,6 +141,45 @@
   text-transform: uppercase;
 }
 
+/* Phase 2 blocks (BRIEF-2): slightly tighter section rhythm and type than the Home blocks. */
+@utility block-pt {
+  padding-top: clamp(64px, 8vw, 112px);
+}
+
+@utility block-pb {
+  padding-bottom: clamp(64px, 8vw, 112px);
+}
+
+@utility type-page-h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 118%;
+  font-size: clamp(44px, 5.4vw, 76px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+@utility type-block-h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 115%;
+  font-size: clamp(30px, 3.2vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+/* Text link with the orange underline used across phase 2 blocks. */
+@utility link-underline {
+  font-weight: 600;
+  text-decoration-line: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
 @utility type-stat {
   font-family: var(--font-display);
   font-weight: 800;
@@ -145,5 +208,10 @@
 
   ::placeholder {
     color: #8a837b;
+  }
+
+  /* Anchor links land below the header. */
+  [id] {
+    scroll-margin-top: 80px;
   }
 }

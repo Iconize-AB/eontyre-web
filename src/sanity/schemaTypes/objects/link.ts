@@ -26,7 +26,7 @@ export const link = defineType({
       name: 'page',
       title: 'Page',
       type: 'reference',
-      to: [{type: 'page'}],
+      to: [{type: 'page'}, {type: 'integration'}, {type: 'post'}],
       hidden: ({parent}) => parent?.linkType !== 'internal',
       validation: (rule) =>
         rule.custom((value, {parent}) =>
@@ -34,6 +34,14 @@ export const link = defineType({
             ? 'Choose a page'
             : true,
         ),
+    }),
+    defineField({
+      name: 'anchor',
+      title: 'Section on the page',
+      type: 'string',
+      description: 'Optional anchor ID of a block on that page, e.g. "contact".',
+      hidden: ({parent}) => parent?.linkType !== 'internal',
+      validation: (rule) => rule.regex(/^[a-z][a-z0-9-]*$/).error('Lowercase letters, numbers and hyphens'),
     }),
     defineField({
       name: 'url',
