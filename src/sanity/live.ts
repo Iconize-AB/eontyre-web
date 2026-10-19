@@ -18,13 +18,16 @@ export const {sanityFetch, SanityLive} = defineLive({
   strict: true,
 })
 
+/** Put on every cached Sanity fetch, so the webhook at /api/revalidate can clear them all at once. */
+export const SITE_CONTENT_TAG = 'site-content'
+
 /**
  * The app's single `'use cache'` boundary for Sanity data. `sanityFetch` tags
  * results so the Live Content API can revalidate exactly what changed.
  */
 export const cachedSanity: StrictDefinedFetchType = async (options) => {
   'use cache'
-  return sanityFetch(options)
+  return sanityFetch({...options, tags: [...(options.tags ?? []), SITE_CONTENT_TAG]})
 }
 
 export interface FetchOptions {
